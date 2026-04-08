@@ -1,1 +1,1 @@
-export const DEPLOYED_BACKEND_ADDRESS = "https://shelter-backend-five.vercel.app";
+export const DEPLOYED_BACKEND_ADDRESS = process.env.EXPO_PUBLIC_BACKEND_URL ?? 'http://localhost:3000';

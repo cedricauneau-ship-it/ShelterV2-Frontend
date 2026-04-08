@@ -17,6 +17,7 @@ import { tutoCards } from "../data/tuto";
 
 import { useSelector, useDispatch } from "react-redux";
 import { setGauges, setCurrentCard, setCurrentNumberDays, Card, setFirstGame } from "../reducers/user";
+import { RootState } from "../store";
 
 import AudioManager from "../modules/audioManager";
 import { getImage } from '../modules/imagesSelector';
@@ -58,7 +59,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
 
     const dispatch = useDispatch();
 
-    const user = useSelector((state: string) => state.user.value);
+    const user = useSelector((state: RootState) => state.user.value);
 
 
     // Tuto
@@ -284,8 +285,8 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
 
             }
             
-        }catch (err) {
-
+        } catch (err) {
+            console.error('[GameScreen] handleChoice error:', err);
         }
     }
 
@@ -312,7 +313,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                 const moralDelta = choice === 'left' ? currentCard.left.effect.moral : currentCard.right.effect.moral;
                 const foodDelta = choice === 'left' ? currentCard.left.effect.food : currentCard.right.effect.food;
 
-                setTutoHunger(tutoFood - hungerDelta);
+                setTutoHunger(tutoHunger - hungerDelta);
                 setTutoSecurity(tutoSecurity - securityDelta);
                 setTutoHealth(tutoHealth - healthDelta);
                 setTutoMoral(tutoMoral - moralDelta);

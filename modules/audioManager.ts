@@ -55,7 +55,7 @@ class AudioManager {
     if (sound) {
       await this.fadeSound(sound, this.volume, 0, this.fadeDuration);
       const status = await sound.getStatusAsync();
-      if (status.isPlaying) await sound.pauseAsync();
+      if (status.isLoaded && status.isPlaying) await sound.pauseAsync();
     }
   }
 
@@ -70,7 +70,7 @@ class AudioManager {
     if (sound) {
       await this.fadeSound(sound, this.volume, 0, this.fadeDuration);
       const status = await sound.getStatusAsync();
-      if (status.isPlaying) await sound.pauseAsync();
+      if (status.isLoaded && status.isPlaying) await sound.pauseAsync();
     }
   }
 
@@ -81,7 +81,7 @@ class AudioManager {
 
     if (fromSound) {
       const status = await fromSound.getStatusAsync();
-      if (status.isPlaying) {
+      if (status.isLoaded && status.isPlaying) {
         await this.fadeSound(fromSound, this.volume, 0, this.fadeDuration);
         await fromSound.pauseAsync();
       }
@@ -89,7 +89,7 @@ class AudioManager {
 
     if (toSound) {
       const status = await toSound.getStatusAsync();
-      if (!status.isPlaying) {
+      if (!status.isLoaded || !status.isPlaying) {
         await toSound.setPositionAsync(0);
         await toSound.playAsync();
       }

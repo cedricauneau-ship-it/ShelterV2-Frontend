@@ -34,7 +34,7 @@ export type Conditions = {
 };
 
 export type Card = {
-  _id: string;
+  id: string;
   key: string;
   pool: string;
   text: string;

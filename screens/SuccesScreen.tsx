@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet,Image, ImageBackground } from 
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
 import { useSelector } from "react-redux";
 import { useFetchWithAuth } from "../components/fetchWithAuth";
+import { RootState } from "../store";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { ScrollView } from "react-native-gesture-handler";
 import { useEffect, useState } from "react";
@@ -10,8 +11,6 @@ import Achievement from '../components/Achievement'
 import AudioManager from '../modules/audioManager';
 
 import { getImage } from '../modules/imagesSelector';
-
-import { DEPLOYED_BACKEND_ADDRESS } from "../modules/global";
 
 type SuccesScreenProps = {
     navigation: NavigationProp<ParamListBase>;
@@ -28,11 +27,9 @@ type TopPlayer = {
     username: string,
 }
 
-const BACKEND_ADDRESS = DEPLOYED_BACKEND_ADDRESS;//process.env.EXPO_PUBLIC_BACKEND_ADDRESS;
-
 export default function SuccesScreen({ navigation }: SuccesScreenProps ) {
   const fetchWithAuth = useFetchWithAuth();
-    const user = useSelector((state: string) => state.user.value);
+    const user = useSelector((state: RootState) => state.user.value);
     const [succesData, setSuccesData] = useState<achievements[]>([]);
     const [unlockedAchievement, setUnlockedAchievement] = useState<achievements[]>([]);
     const [activeTab, setActiveTab] = useState<'personnal'| 'leaderboard'>('leaderboard');
@@ -41,10 +38,12 @@ export default function SuccesScreen({ navigation }: SuccesScreenProps ) {
 
     useEffect(()=>{
         //fetch des succès
-        fetch(`${BACKEND_ADDRESS}/achievements`)
+        fetchWithAuth(`/achievements`, {
+            method: 'GET',
+        })
         .then(response => response.json())
         .then(data => {
-            setSuccesData(data.achievements)
+            setSuccesData(data.achievements ?? [])
         })
         .catch(err => console.error('Erreur fetch succes', err))
 
@@ -54,19 +53,19 @@ export default function SuccesScreen({ navigation }: SuccesScreenProps ) {
         })
         .then(response => response.json())
         .then(data=>{
-          setTopPlayers(data.topScores)
+          setTopPlayers(data.topScores ?? [])
         })
         .catch(err=>console.error('Erreur fetch Top Players', err))
 
         //fetch unlockedAchievements
-        fetchWithAuth(`/users/unlockedAchievement`, {
+        fetchWithAuth(`/users/unlockedAchievements`, {
             method: 'GET',
         })
         .then(response => response.json())
         .then(data=>{
-            setUnlockedAchievement(data.unlockedAchievements)
+            setUnlockedAchievement(data.unlockedAchievements ?? [])
         })
-        .catch(err=>console.error('Erreur fetch Top Players', err))
+        .catch(err=>console.error('Erreur fetch unlockedAchievements', err))
     },[])
 
     const sortedSuccesData=succesData.sort((a,b)=> {
@@ -96,19 +95,20 @@ export default function SuccesScreen({ navigation }: SuccesScreenProps ) {
 
 
     const topPlayersList = topPlayers.map((player, i) => {
-        //const medalColor = i === 0 ? '#FFD700' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#554946';
         return (
     <View key={i} style={[styles.playerItem, i < 3 && styles.podiumItem]}>
       <View style={styles.playerRank}>
-        <Image source={medalsImages[i]} style={styles.medal}/>
+        {i < 3
+          ? <Image source={medalsImages[i]} style={styles.medal}/>
+          : <Text style={styles.playerScore}>#{i + 1}</Text>
+        }
         <View style={styles.line}></View>
         <View style={styles.playerTextContainer}>
           <Text style={styles.playerUsername}>{player.username}</Text>
           <Text style={styles.playerScore}>{player.bestScore} <Text style={styles.jours}>jours</Text></Text>
         </View>
       </View>
-      {player.username.trim() === user.username.trim() && <FontAwesome name='user' size={25} color='#554946'/>}
-      
+      {player.username.trim() === (user.username ?? '').trim() && <FontAwesome name='user' size={25} color='#554946'/>}
     </View>
   );
 });
@@ -123,7 +123,7 @@ export default function SuccesScreen({ navigation }: SuccesScreenProps ) {
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => {
-          AudioManager.playEffect('click');
+          try { AudioManager.playEffect('click'); } catch {}
           navigation.navigate('Home', { screen: 'Menu' });
         }}
       >
@@ -138,7 +138,7 @@ export default function SuccesScreen({ navigation }: SuccesScreenProps ) {
             <TouchableOpacity
               style={[styles.tab, activeTab === 'leaderboard' && styles.activeTab]}
               onPress={() => {
-                AudioManager.playEffect('click');
+                try { AudioManager.playEffect('click'); } catch {}
                 setActiveTab('leaderboard');
               }}
             >
@@ -149,7 +149,7 @@ export default function SuccesScreen({ navigation }: SuccesScreenProps ) {
             <TouchableOpacity
               style={[styles.tab, activeTab === 'personnal' && styles.activeTab]}
               onPress={() => {
-                AudioManager.playEffect('click');
+                try { AudioManager.playEffect('click'); } catch {}
                 setActiveTab('personnal');
               }}
             >

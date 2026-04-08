@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon-game.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splashscreen.jpg",
       "resizeMode": "contain",
@@ -26,9 +26,8 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.azulys.Shelter",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
@@ -38,15 +37,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-audio"
+      "expo-audio",
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "eas": {
-        "projectId": "043cc589-35fd-4936-91ca-69ca5e54cd02"
+        "projectId": "a86d4c02-cb8d-4855-a45a-4c3611089d85"
       }
     },
-    "updates": {
-      "url": "https://u.expo.dev/043cc589-35fd-4936-91ca-69ca5e54cd02"
-    }
+    "owner": "cece2807"
   }
 }

@@ -1,6 +1,5 @@
-import Constants from 'expo-constants';
-import { View, ActivityIndicator, Alert, Modal, Text, TextInput, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingView, ImageBackground } from "react-native"
-import { useState } from "react"; 
+import { View, ActivityIndicator, Alert, Modal, Text, TextInput, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingView, ImageBackground, Image } from "react-native"
+import { useState } from "react";
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
 
 import { DEPLOYED_BACKEND_ADDRESS } from "../modules/global";
@@ -9,21 +8,23 @@ import { useDispatch } from "react-redux";
 import { signin } from "../reducers/user";
 
 import Entypo from '@expo/vector-icons/Entypo';
-
 import AudioManager from '../modules/audioManager';
 
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+
+GoogleSignin.configure({
+  webClientId: '542100763309-addf4tkcshndslbikc7sehrebpj5vjkf.apps.googleusercontent.com',
+  scopes: ['profile', 'email'],
+});
 
 type ConnexionScreenProps = {
     navigation: NavigationProp<ParamListBase>;
 }
 
-
 // Grabbed from emailregex.com
 const EMAIL_REGEX: RegExp = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
-const BACKEND_ADDRESS = DEPLOYED_BACKEND_ADDRESS;//process.env.EXPO_PUBLIC_BACKEND_ADDRESS;
-const USERNAME_SIGNIN = process.env.EXPO_PUBLIC_USERNAME_SIGNIN
-const PWD_SIGNIN = process.env.EXPO_PUBLIC_PWD_SIGNIN
+const BACKEND_ADDRESS = DEPLOYED_BACKEND_ADDRESS;
 
 export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
        
@@ -43,6 +44,52 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
     const [loading, setLoading] = useState(false);    
 
     const dispatch = useDispatch();
+
+    const safePlayEffect = (type: Parameters<typeof AudioManager.playEffect>[0]) => {
+        try { AudioManager.playEffect(type); } catch {}
+    };
+
+    const handleGoogleSignin = async () => {
+        try {
+            await GoogleSignin.hasPlayServices();
+            const userInfo = await GoogleSignin.signIn();
+            const idToken = userInfo.data?.idToken;
+
+            if (!idToken) {
+                SetSigninError('Impossible de récupérer le token Google');
+                return;
+            }
+
+            const response = await fetch(`${BACKEND_ADDRESS}/auth/google`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken }),
+            });
+
+            const data = await response.json();
+
+            if (data.result) {
+                dispatch(signin({
+                    token: data.token,
+                    refreshToken: data.refreshToken,
+                    username: data.username,
+                    email: data.email ?? '',
+                }));
+                navigation.navigate('Home', { screen: 'Home' });
+            } else {
+                SetSigninError(data.error ?? 'Erreur de connexion Google');
+            }
+        } catch (error: any) {
+            if (error.code === statusCodes.SIGN_IN_CANCELLED) return;
+            if (error.code === statusCodes.IN_PROGRESS) return;
+            if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                SetSigninError('Google Play Services non disponible');
+                return;
+            }
+            SetSigninError('Erreur de connexion Google');
+            console.error('[Google SignIn]', error);
+        }
+    };
 
     const handleSignin = () => {
             SetSigninError('');
@@ -77,11 +124,10 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
         }
 
         const handleSignup = () => {
-            AudioManager.playEffect('click');
+            safePlayEffect('click');
             setEmailError(false);
             setPasswordError('');
             setSignupError('');
-            setUsernameSignup('');
 
             if (!EMAIL_REGEX.test(emailSignup)){
                 setEmailError(true);
@@ -175,7 +221,7 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
                         autoCapitalize="none"
                         keyboardType='default'
                         autoComplete="username"
-                        onChangeText={(value) => {AudioManager.playEffect('click'); setUsername(value); SetSigninError('')}}
+                        onChangeText={(value) => {safePlayEffect('click'); setUsername(value); SetSigninError('')}}
                         value={username}
                     />
 
@@ -188,7 +234,7 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
                             autoCorrect = {false}
                             keyboardType="default"
                             secureTextEntry={!isPWDVisible}
-                            onChangeText={(value) => {AudioManager.playEffect('click'); setPassword(value); SetSigninError('')}}
+                            onChangeText={(value) => {safePlayEffect('click'); setPassword(value); SetSigninError('')}}
                             value={password}
                         />
                         <TouchableOpacity style={styles.eyeButton} onPress={()=>setIsPWDvisible(!isPWDVisible)}>
@@ -204,11 +250,13 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
                     </TouchableOpacity>
                    </View>
 
-                    <TouchableOpacity onPress={() => {AudioManager.playEffect('click'); handleSignin()}} style={styles.button} activeOpacity={0.8}>
+                    <TouchableOpacity 
+                        onPress={() => {safePlayEffect('click'); handleSignin()}} 
+                        style={styles.button} 
+                        activeOpacity={0.8}
+                    >
                         <Text style={styles.buttonText}>Go</Text>
                     </TouchableOpacity>
-
-
 
                     <Modal
                     visible = {isResetPWDVisible}
@@ -247,8 +295,19 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
                     
 
 
+                    <View style={styles.divider}>
+                        <View style={styles.dividerLine} />
+                        <Text style={styles.dividerText}>OU</Text>
+                        <View style={styles.dividerLine} />
+                    </View>
+
+                    <TouchableOpacity onPress={handleGoogleSignin} style={styles.googleButton} activeOpacity={0.8}>
+                        <Image source={require('../assets/icon-google.png')} style={styles.googleIcon} />
+                        <Text style={styles.googleButtonText}>Continuer avec Google</Text>
+                    </TouchableOpacity>
+
                     <Text style={styles.title2}>Pas encore de compte ?</Text>
-                    <TouchableOpacity onPress={() => {AudioManager.playEffect('click'); setIsSignupVisible(true); setUsername(''); setPassword('')}} style={styles.button} activeOpacity={0.8}>
+                    <TouchableOpacity onPress={() => {safePlayEffect('click'); setIsSignupVisible(true); setUsername(''); setPassword('')}} style={styles.button} activeOpacity={0.8}>
                         <Text style={styles.buttonText}>Créer un compte</Text>
                     </TouchableOpacity>
                     <Modal
@@ -302,7 +361,7 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
                                     <TouchableOpacity style={styles.btn} onPress={handleSignup}>
                                         <Text style={styles.buttonTextModal}>Valider</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity style={styles.btn} onPress={()=> {AudioManager.playEffect('click'); setIsSignupVisible(false); setEmailSignup(''); setUsernameSignup(''); setPasswordSignup('')}}>
+                                    <TouchableOpacity style={styles.btn} onPress={()=> {safePlayEffect('click'); setIsSignupVisible(false); setEmailSignup(''); setUsernameSignup(''); setPasswordSignup('')}}>
                                         <Text style={styles.buttonTextModal}>Annuler</Text>
                                     </TouchableOpacity>
                                 </View>
@@ -433,6 +492,51 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontFamily: 'ArialRounded',
         color: '#EFDAB7',
+    },
+
+    googleButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#fff',
+        width: 235,
+        height: 60,
+        borderWidth: 2.5,
+        borderColor: 'black',
+        borderRadius: 15,
+        gap: 10,
+        marginBottom: 15,
+    },
+
+    googleIcon: {
+        width: 24,
+        height: 24,
+    },
+
+    googleButtonText: {
+        fontSize: 16,
+        fontFamily: 'ArialRounded',
+        color: '#352C2B',
+    },
+
+    divider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: 235,
+        marginVertical: 15,
+        gap: 10,
+    },
+
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: '#EFDAB7',
+    },
+
+    dividerText: {
+        color: '#EFDAB7',
+        fontFamily: 'ArialRounded',
+        fontSize: 14,
     },
 
     buttonTextModal: {

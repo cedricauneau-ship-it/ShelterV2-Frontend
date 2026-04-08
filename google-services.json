@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "542100763309",
+    "project_id": "carbide-trees-474412-b3",
+    "storage_bucket": "carbide-trees-474412-b3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:542100763309:android:89c09e797459b900e68c24",
+        "android_client_info": {
+          "package_name": "com.azulys.Shelter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "542100763309-addf4tkcshndslbikc7sehrebpj5vjkf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAimPgsiMlxqTxloYdbnFNKluyk-qKWY1U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "542100763309-addf4tkcshndslbikc7sehrebpj5vjkf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
