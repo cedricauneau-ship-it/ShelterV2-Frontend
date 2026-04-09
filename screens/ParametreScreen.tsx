@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, ImageBackground, Image, Pressable, TouchableOpacity, Modal, Alert } from "react-native"
+import { View, Text, StyleSheet, ImageBackground, Image, TouchableOpacity, Modal, Switch } from "react-native"
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
-import { Slider, Switch } from '@rneui/themed';
+import Slider from '@react-native-community/slider';
 import { useState, useEffect } from "react";
 import { useFetchWithAuth } from "../components/fetchWithAuth";
 import { useSelector, useDispatch } from "react-redux";
@@ -21,9 +21,7 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
 
     const [volume, setVolume] = useState(user.volume);
     const [soundEnabled, setSoundEnabled] = useState(user.soundOn);
-    const [soundText, setSoundText] = useState('');
     const [soundClicEnabled, setSoundClicEnabled] = useState(user.btnSoundOn);
-    const [soundClicText, setSoundClicText] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
     const [resetConfirmationModal, setResetConfirmationModal] = useState(false);
 
@@ -33,8 +31,6 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
         setVolume(user.volume);
         setSoundEnabled(user.soundOn);
         setSoundClicEnabled(user.btnSoundOn);
-        setSoundText(user.soundOn ? 'ON' : 'OFF');
-        setSoundClicText(user.btnSoundOn ? 'ON' : 'OFF');
     }, [user]);
 
 
@@ -47,49 +43,38 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
     const toggleSound = () => {
         const newState = !soundEnabled;
         setSoundEnabled(newState);
-        setSoundText(newState ? 'ON' : 'OFF');
-        AudioManager.setMusicMuted(!newState); // mute/démute la musique
+        AudioManager.setMusicMuted(!newState);
         dispatch(updateSettings({ soundOn: newState }));
     };
 
     const toggleSoundClic = () => {
         const newState = !soundClicEnabled;
         setSoundClicEnabled(newState);
-        setSoundClicText(newState ? 'ON' : 'OFF');
-        AudioManager.setEffectsMuted(!newState); // mute/démute les bruitages
+        AudioManager.setEffectsMuted(!newState);
         dispatch(updateSettings({ btnSoundOn: newState }));
     };
 
-    const handleSaveSettings = async () => {
-    try {
-        const response = await fetchWithAuth(`/users/settings`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            volume,
-            soundOn: soundEnabled,
-            btnSoundOn: soundClicEnabled,
-        }),
-        });
-
-        const data = await response.json();
-
-        if (data.result) {
+    const handleSaveSettings = () => {
+        // Sauvegarde en arrière-plan
+        fetchWithAuth(`/users/settings`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ volume, soundOn: soundEnabled, btnSoundOn: soundClicEnabled }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.result) {
                 dispatch(updateSettings({
                     volume: data.settings.volume,
                     soundOn: data.settings.soundOn,
                     btnSoundOn: data.settings.btnSoundOn,
                 }));
-                AudioManager.setMusicMuted(!data.settings.soundOn);
-                AudioManager.setEffectsMuted(!data.settings.btnSoundOn);
-                AudioManager.setMusicVolume(data.settings.volume);
-                navigation.navigate('Home', { screen: 'Home' });
             }
-        } catch (error) {
-            console.error('Erreur de requête PUT /settings :', error);
-        }
+        })
+        .catch(err => console.error('Erreur PUT /settings :', err));
+
+        // Navigation immédiate
+        navigation.navigate('Home', { screen: 'Home' });
     };
 
     const handleResetAccount = () => {
@@ -130,31 +115,29 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
                                 maximumValue={100}
                                 minimumValue={0}
                                 step={2}
-                                allowTouchTrack
-                                trackStyle={{ height: 25, borderRadius: 12.5, backgroundColor: '#524743' }}
-                                thumbStyle={{ height: 32, width: 32, backgroundColor: '#FFE8BF' }}
                                 minimumTrackTintColor="#388FF0"
                                 maximumTrackTintColor="#524743"
+                                thumbTintColor="#FFE8BF"
                                 style={styles.volumeSlider}
                             />
-                            <Text style={styles.text}>Musique : {soundText}</Text>
-                            <View style={{transform: 'scale(2)'}}>
+                            <View style={styles.settingRow}>
+                                <Text style={styles.text}>Musique</Text>
                                 <Switch
                                     value={soundEnabled}
                                     onValueChange={toggleSound}
-                                    style={{width : 95, height: 45}}
-                                    thumbColor={soundEnabled ? '#FFE8BF' : '#FFE8BF'}
+                                    thumbColor="#FFE8BF"
                                     trackColor={{ false: '#D05A34', true: '#74954E' }}
+                                    ios_backgroundColor="#D05A34"
                                 />
                             </View>
-                            <Text style={styles.text}>Bruitage : {soundClicText}</Text>
-                            <View style={{transform: 'scale(2)'}}>
+                            <View style={styles.settingRow}>
+                                <Text style={styles.text}>Bruitage</Text>
                                 <Switch
                                     value={soundClicEnabled}
                                     onValueChange={toggleSoundClic}
-                                    style={{width : 95, height: 45}}
-                                    thumbColor={soundClicEnabled ? '#FFE8BF' : '#FFE8BF'}
+                                    thumbColor="#FFE8BF"
                                     trackColor={{ false: '#D05A34', true: '#74954E' }}
+                                    ios_backgroundColor="#D05A34"
                                 />
                             </View>
                         </View>
@@ -289,6 +272,13 @@ const styles = StyleSheet.create({
     },
     volumeSlider: {
         width: '100%',
+        height: 40,
+    },
+    settingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 20,
     },
     text: {
         color: '#FFE8BF',

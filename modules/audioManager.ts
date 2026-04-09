@@ -17,6 +17,19 @@ class AudioManager {
   private static volume = 0.2;
   private static fadeDuration = 1000; // ms
 
+  // Initialise les settings depuis les préférences sauvegardées du joueur
+  static init(settings: { volume: number; soundOn: boolean; btnSoundOn: boolean }) {
+    this.volume = settings.volume / 100;
+    this.musicMuted = !settings.soundOn;
+    this.effectsMuted = !settings.btnSoundOn;
+
+    // Applique le volume aux musiques déjà chargées
+    const bg = this.sounds.background;
+    const bgGame = this.sounds.backgroundGame;
+    if (bg) bg.setVolumeAsync(this.musicMuted ? 0 : this.volume);
+    if (bgGame) bgGame.setVolumeAsync(this.musicMuted ? 0 : this.volume);
+  }
+
   // Précharge tous les sons
   static async preloadAll() {
     for (const key of Object.keys(soundFiles) as SoundKey[]) {

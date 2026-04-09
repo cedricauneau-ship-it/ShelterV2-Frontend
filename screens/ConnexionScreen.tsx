@@ -1,6 +1,6 @@
 import { View, ActivityIndicator, Alert, Modal, Text, TextInput, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingView, ImageBackground, Image } from "react-native"
-import { useState } from "react";
-import { NavigationProp, ParamListBase } from '@react-navigation/native';
+import { useState, useCallback } from "react";
+import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
 
 import { DEPLOYED_BACKEND_ADDRESS } from "../modules/global";
 
@@ -44,6 +44,12 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
     const [loading, setLoading] = useState(false);    
 
     const dispatch = useDispatch();
+
+    // Coupe la musique sur l'écran de connexion (ni cinématique ni menu)
+    useFocusEffect(useCallback(() => {
+        AudioManager.pauseBackground();
+        AudioManager.pauseBackgroundGame();
+    }, []));
 
     const safePlayEffect = (type: Parameters<typeof AudioManager.playEffect>[0]) => {
         try { AudioManager.playEffect(type); } catch {}

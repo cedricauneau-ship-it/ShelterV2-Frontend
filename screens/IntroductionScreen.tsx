@@ -5,6 +5,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, FadeIn } from '
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { useSelector } from 'react-redux';
+import { store } from '../store';
 
 const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground);
 
@@ -21,7 +22,10 @@ const cinematicTimeline = [
 
 export default function IntroductionScreen({ navigation } : IntoductionScreenProps) {
 
-    const token = useSelector((state: any) => state.user.value.token);
+    useSelector((state: any) => state.user.value.token); // force le re-render à la rehydratation
+
+    // Lit le token au moment de la navigation (pas en closure)
+    const getToken = () => store.getState().user.value.token;
 
     const [cinematicPhase, setcinematicPhase] = useState<string>('first');
     const indexRef = useRef(0);
@@ -58,10 +62,10 @@ export default function IntroductionScreen({ navigation } : IntoductionScreenPro
         const now = Date.now();
 
         if (lastTap.current && now - lastTap.current < 250) {
-            // Double tap detected → skip 
+            // Double tap detected → skip
             reset();
             // redirige selon la présence du token
-                   if (token) {
+                   if (getToken()) {
             navigation.navigate('Home', { screen: 'Home' });
               } else {
                   navigation.navigate('Connexion', { screen: 'ConnexionScreen' });
@@ -124,7 +128,7 @@ export default function IntroductionScreen({ navigation } : IntoductionScreenPro
               setCinematicTimeout(nextPhase, phaseData.duration); // on lance la phase en renseignant sa durée
               } else {
               setCinematicTimeout(() => {
-                                      if (token) {
+                                      if (getToken()) {
               navigation.navigate('Home', { screen: 'Home' });
             } else {
             navigation.navigate('Connexion', { screen: 'ConnexionScreen' }); // toutes les phases sont passées, on est envoyé vers l'écran connexion ou home si token existant

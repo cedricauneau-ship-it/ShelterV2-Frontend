@@ -31,6 +31,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
             .then(response => response.json())
             .then(data => {
                 dispatch(setUserData({ bestScore: data.bestScore, soundOn: data.settings.soundOn, volume: data.settings.volume, btnSoundOn: data.settings.btnSoundOn }));
+                AudioManager.init({ volume: data.settings.volume, soundOn: data.settings.soundOn, btnSoundOn: data.settings.btnSoundOn });
                 if (!data.currentGameId) {
                     setCurrentGame(false);
                 } else {
