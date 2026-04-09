@@ -31,13 +31,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
             .then(response => response.json())
             .then(data => {
                 dispatch(setUserData({ bestScore: data.bestScore, soundOn: data.settings.soundOn, volume: data.settings.volume, btnSoundOn: data.settings.btnSoundOn }));
-                if (!data.currentGame) {
+                if (!data.currentGameId) {
                     setCurrentGame(false);
-                    return;
-                } else {                
-                    if (data.currentGame) {
-                        setCurrentGame(true);        
-                    }
+                } else {
+                    setCurrentGame(true);
                 }
             });
         }, [])

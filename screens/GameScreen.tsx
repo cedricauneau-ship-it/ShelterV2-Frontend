@@ -172,7 +172,6 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
 
     // Déclenche le gameover
     const handleGameover = (achievements: [] ) => {
-
         setTimeout(() => {
             resetGame();
             navigation.navigate('RecapGame', { screen: 'RecapGame', achievements: achievements  });
@@ -181,7 +180,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
 
   
     // traite de choix une fois que le swipe est validé
-    const handleChoice  = async () : Promise<void> => {
+    const handleChoice  = async (side: 'left' | 'right') : Promise<void> => {
 
         try{
             if(!showConsequence){ // Il n'y pas de conséquence à affichier pour la carte courante
@@ -190,7 +189,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                 const response = await fetchWithAuth(`/games/choice`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ choice:  currentSide}),
+                body: JSON.stringify({ choice: side }),
                 } );
 
                 const data = await response.json();
@@ -347,7 +346,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
         if(!tuto){
             if(!gameover){
                 AudioManager.playEffect('validate');
-                handleChoice();
+                handleChoice('left');
             }
             else{
                 handleGameover(lastResponse?.achievements || []);
@@ -366,7 +365,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
         if(!tuto){
             if(!gameover){
                 AudioManager.playEffect('validate');
-                handleChoice();
+                handleChoice('right');
             }
             else{
                 handleGameover(lastResponse?.achievements || []);
@@ -511,10 +510,10 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                                 >
                                     <Image source={require('../assets/icon-skull.png')} resizeMode="contain" style={styles.skullLogo} />
                                     <Text style={styles.textDeath}>
-                                        {lastResponse?.death?.title.phrase}
+                                        {lastResponse?.death?.description}
                                     </Text>
                                     <Text style={[styles.deathCause, {color: lastResponse?.death ? changeColor(lastResponse?.death?.type) : '#ffe7bf'}]}>
-                                        {lastResponse?.death?.title.hook.toUpperCase()}
+                                        {lastResponse?.death?.title?.toUpperCase()}
                                     </Text>
                                 </Animated.View>
                                     

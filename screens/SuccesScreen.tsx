@@ -1,11 +1,11 @@
 import { View, Text, TouchableOpacity, StyleSheet,Image, ImageBackground } from "react-native"
-import { NavigationProp, ParamListBase } from '@react-navigation/native';
+import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
 import { useSelector } from "react-redux";
 import { useFetchWithAuth } from "../components/fetchWithAuth";
 import { RootState } from "../store";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { ScrollView } from "react-native-gesture-handler";
-import { useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Achievement from '../components/Achievement'
 
 import AudioManager from '../modules/audioManager';
@@ -36,7 +36,7 @@ export default function SuccesScreen({ navigation }: SuccesScreenProps ) {
     const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([])
 
 
-    useEffect(()=>{
+    useFocusEffect(useCallback(()=>{
         //fetch des succès
         fetchWithAuth(`/achievements`, {
             method: 'GET',
@@ -66,26 +66,21 @@ export default function SuccesScreen({ navigation }: SuccesScreenProps ) {
             setUnlockedAchievement(data.unlockedAchievements ?? [])
         })
         .catch(err=>console.error('Erreur fetch unlockedAchievements', err))
-    },[])
+    },[]))
 
-    const sortedSuccesData=succesData.sort((a,b)=> {
-        const aUnlocked = unlockedAchievement.some(ach => ach.name === a.name);
-        const bUnlocked = unlockedAchievement.some(ach => ach.name === b.name);
-        // Si a est débloqué et pas b → a avant b
-        if(aUnlocked && !bUnlocked) return -1;
-          // Si b est débloqué et pas a → b avant a
-        if (!aUnlocked && bUnlocked) return 1;
-          // Sinon garder l'ordre initial
-        return 0;
-    })
-
-
-    const succes = sortedSuccesData.map((data, i)=> {
-        const isUnlocked = unlockedAchievement.some(
-            (ach) => ach.name === data.name)
-
-            return <Achievement key={i} name={data.name} description={data.description} image={data.image} isUnlocked={isUnlocked}/>
-});
+    const succes = useMemo(() => {
+        const sorted = [...succesData].sort((a, b) => {
+            const aUnlocked = unlockedAchievement.some(ach => ach.name === a.name);
+            const bUnlocked = unlockedAchievement.some(ach => ach.name === b.name);
+            if (aUnlocked && !bUnlocked) return -1;
+            if (!aUnlocked && bUnlocked) return 1;
+            return 0;
+        });
+        return sorted.map((data, i) => {
+            const isUnlocked = unlockedAchievement.some(ach => ach.name === data.name);
+            return <Achievement key={i} name={data.name} description={data.description} image={data.image} isUnlocked={isUnlocked}/>;
+        });
+    }, [succesData, unlockedAchievement]);
 
   const medalsImages = [
     require('../assets/icon-top1.png'),
