@@ -22,6 +22,7 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
     const [volume, setVolume] = useState(user.volume);
     const [soundEnabled, setSoundEnabled] = useState(user.soundOn);
     const [soundClicEnabled, setSoundClicEnabled] = useState(user.btnSoundOn);
+    const [hapticEnabled, setHapticEnabled] = useState(user.hapticOn ?? true);
     const [modalVisible, setModalVisible] = useState(false);
     const [resetConfirmationModal, setResetConfirmationModal] = useState(false);
 
@@ -31,6 +32,7 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
         setVolume(user.volume);
         setSoundEnabled(user.soundOn);
         setSoundClicEnabled(user.btnSoundOn);
+        setHapticEnabled(user.hapticOn ?? true);
     }, [user]);
 
 
@@ -54,12 +56,18 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
         dispatch(updateSettings({ btnSoundOn: newState }));
     };
 
+    const toggleHaptic = () => {
+        const newState = !hapticEnabled;
+        setHapticEnabled(newState);
+        dispatch(updateSettings({ hapticOn: newState }));
+    };
+
     const handleSaveSettings = () => {
         // Sauvegarde en arrière-plan
         fetchWithAuth(`/users/settings`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ volume, soundOn: soundEnabled, btnSoundOn: soundClicEnabled }),
+            body: JSON.stringify({ volume, soundOn: soundEnabled, btnSoundOn: soundClicEnabled, hapticOn: hapticEnabled }),
         })
         .then(r => r.json())
         .then(data => {
@@ -68,6 +76,7 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
                     volume: data.settings.volume,
                     soundOn: data.settings.soundOn,
                     btnSoundOn: data.settings.btnSoundOn,
+                    hapticOn: data.settings.hapticOn,
                 }));
             }
         })
@@ -135,6 +144,16 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
                                 <Switch
                                     value={soundClicEnabled}
                                     onValueChange={toggleSoundClic}
+                                    thumbColor="#FFE8BF"
+                                    trackColor={{ false: '#D05A34', true: '#74954E' }}
+                                    ios_backgroundColor="#D05A34"
+                                />
+                            </View>
+                            <View style={styles.settingRow}>
+                                <Text style={styles.text}>Vibrations</Text>
+                                <Switch
+                                    value={hapticEnabled}
+                                    onValueChange={toggleHaptic}
                                     thumbColor="#FFE8BF"
                                     trackColor={{ false: '#D05A34', true: '#74954E' }}
                                     ios_backgroundColor="#D05A34"

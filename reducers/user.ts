@@ -59,12 +59,13 @@ export type UserState= {
         btnSoundOn: boolean;
         soundOn: boolean;
         volume: number;
+        hapticOn: boolean;
         firstGame: boolean;
     }
 }
 
 const initialState: UserState = {
-    value : {email: null, username: null, token: null, refreshToken: null, stateOfGauges: null, numberDays: null, bestScore: null, currentCard: null, btnSoundOn: true, soundOn: true, volume: 50, firstGame: true},
+    value : {email: null, username: null, token: null, refreshToken: null, stateOfGauges: null, numberDays: null, bestScore: null, currentCard: null, btnSoundOn: true, soundOn: true, volume: 50, hapticOn: true, firstGame: true},
 };
 
 export const userSlice = createSlice({
@@ -95,12 +96,12 @@ export const userSlice = createSlice({
         setCurrentNumberDays:(state, action: PayloadAction<number>) =>{
             state.value.numberDays = action.payload
         },
-        setUserData:(state, action: PayloadAction<{bestScore: number; soundOn: boolean; volume: number; btnSoundOn: boolean}>) =>{
+        setUserData:(state, action: PayloadAction<{bestScore: number; soundOn: boolean; volume: number; btnSoundOn: boolean; hapticOn: boolean}>) =>{
             state.value.bestScore = action.payload.bestScore;
             state.value.soundOn = action.payload.soundOn;
             state.value.volume = action.payload.volume;
             state.value.btnSoundOn = action.payload.btnSoundOn;
-               
+            state.value.hapticOn = action.payload.hapticOn ?? true;
         },
         updateBestScore: (state, action: PayloadAction<number>) =>{
             state.value.bestScore = action.payload
@@ -108,7 +109,7 @@ export const userSlice = createSlice({
         signout:(state) => {
             state.value = initialState.value;
         },
-        updateSettings: (state, action: PayloadAction<{soundOn: boolean; btnSoundOn: boolean; volume: number}>) => {
+        updateSettings: (state, action: PayloadAction<Partial<{soundOn: boolean; btnSoundOn: boolean; volume: number; hapticOn: boolean}>>) => {
             if (action.payload.soundOn !== undefined) {
                 state.value.soundOn = action.payload.soundOn;
             }
@@ -117,6 +118,9 @@ export const userSlice = createSlice({
             }
             if (action.payload.volume !== undefined) {
                 state.value.volume = action.payload.volume;
+            }
+            if (action.payload.hapticOn !== undefined) {
+                state.value.hapticOn = action.payload.hapticOn;
             }
         },
         setFirstGame : (state, action: PayloadAction<boolean>) =>{

@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, Image, ImageBackground, TouchableOpacity } from "react-native"
+import * as Haptics from 'expo-haptics';
 import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useFetchWithAuth } from '../components/fetchWithAuth';
@@ -61,6 +62,8 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
 
     const user = useSelector((state: RootState) => state.user.value);
 
+
+    const hapticOn: boolean = user.hapticOn ?? true;
 
     // Tuto
     const tuto : boolean = user.firstGame;
@@ -157,6 +160,8 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
     }));
 
     const triggerShake = () => {
+        if (hapticOn) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+
         shakeOffset.value = withRepeat(
             withTiming(10, { duration: 50 }), // décalage vers la droite
             6, // nombre de répétitions
@@ -342,6 +347,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
     // On valide le swipe à gauche
     const onSwipeLeft = () => {
         setCurrentSide('left');
+        if (hapticOn) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
         if(!tuto){
             if(!gameover){
@@ -361,6 +367,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
     // On valide le swipe à droite
     const onSwipeRight = () => {
         setCurrentSide('right');
+        if (hapticOn) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
         if(!tuto){
             if(!gameover){
