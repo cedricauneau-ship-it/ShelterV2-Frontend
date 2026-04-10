@@ -5,6 +5,8 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  withRepeat,
+  cancelAnimation,
   interpolateColor,
 } from "react-native-reanimated";
 
@@ -21,29 +23,45 @@ export default function Gauge({ icon, color, percent, indicator, decrease } : Ga
     const delta = 5;    // to shift the fill bar to the top and avoid to hide it behind the icon
     const newPercent = percent === 0 ? 0 : delta + percent * (100 - delta) / 100;
 
+    const CRITICAL_THRESHOLD = 20;
+
     const prevPercent = useRef(percent);    // to stock the previous percent (and compare with the current)
     const gaugeAnim = useSharedValue(newPercent);   // hauteur jauge
-    const flashAnim = useSharedValue(0);            // blink rouge
+    const flashAnim = useSharedValue(0);            // flash rouge one-shot
+    const blinkAnim = useSharedValue(1);            // clignotement critique continu
 
     // Animation flash rouge qui se déclenche quand la jauge tombe à zero
     useEffect(() => {
-  
+
         // smooth transition hauteur
         gaugeAnim.value = withTiming(newPercent, {
             duration: 200,
         });
 
-        // flash rouge si tombe à zéro
+        // flash rouge one-shot si tombe à zéro
         if (percent <= 0 && prevPercent.current > 0) {
             flashAnim.value = 1;
             flashAnim.value = withTiming(0, { duration: 300 });
+        }
+
+        // clignotement continu si en zone critique (< 20%)
+        if (percent < CRITICAL_THRESHOLD && percent > 0) {
+            blinkAnim.value = withRepeat(
+                withTiming(0.3, { duration: 600 }),
+                -1,
+                true
+            );
+        } else {
+            cancelAnimation(blinkAnim);
+            blinkAnim.value = withTiming(1, { duration: 200 });
         }
 
         prevPercent.current = percent;
     }, [percent]);
 
     const barStyle = useAnimatedStyle(() => ({
-        height: `${gaugeAnim.value}%`
+        height: `${gaugeAnim.value}%`,
+        opacity: blinkAnim.value,
     }));
 
     const flashStyle = useAnimatedStyle(() => ({

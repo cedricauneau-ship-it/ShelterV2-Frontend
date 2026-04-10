@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { useFonts } from 'expo-font';
+import * as NavigationBar from 'expo-navigation-bar';
 
 import AudioManager from './modules/audioManager';
 import { store, persistor } from './store';  // import du store
@@ -26,11 +27,16 @@ const Stack = createNativeStackNavigator();
 export default function App() {
 
 
+  // Cache la barre de navigation Android (mode immersif)
+  useEffect(() => {
+    NavigationBar.setVisibilityAsync('hidden');
+    NavigationBar.setBehaviorAsync('inset-swipe'); // réapparaît brièvement si l'utilisateur swipe depuis le bas, puis se cache à nouveau
+  }, []);
+
   // Charge les sons et lance la musique de fond du menu
   useEffect(() => {
     const init = async () => {
       await AudioManager.preloadAll();
-
       await AudioManager.playBackground();
     };
 

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Image, ImageBackground, TouchableOpacity } from "react-native"
+import { View, Text, StyleSheet, Image, ImageBackground, TouchableOpacity, Alert } from "react-native"
 import * as Haptics from 'expo-haptics';
 import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -221,7 +221,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                 }
 
                 // On vérifie s'il y a un texte de conséquence pour le choix validé
-                const cons = currentSide === 'right' ? currentCard?.right?.consequence : currentCard?.left?.consequence;
+                const cons = side === 'right' ? currentCard?.right?.consequence : currentCard?.left?.consequence;
 
                 if (cons) { // Si oui, on montre le choix
                     setConsequenceText(cons);
@@ -480,7 +480,16 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
         <ImageBackground source={require('../assets/background.jpg')} resizeMode="cover" style={styles.backgroundImage}>
             <View style={styles.container}>
                 <View style={styles.hud}>
-                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Home', { screen: 'Menu'})}>
+                    <TouchableOpacity style={styles.backButton} onPress={() => {
+                        Alert.alert(
+                            'Quitter la partie ?',
+                            'Ta progression sera sauvegardée. Tu pourras reprendre depuis le menu.',
+                            [
+                                { text: 'Rester', style: 'cancel' },
+                                { text: 'Quitter', style: 'destructive', onPress: () => navigation.navigate('Home', { screen: 'Menu' }) },
+                            ]
+                        );
+                    }}>
                         <Image source={require('../assets/icon-arrow.png')} style={styles.leftArrow} />
                     </TouchableOpacity>
                     <Text style={styles.numberDays}>JOUR {user.numberDays}</Text>

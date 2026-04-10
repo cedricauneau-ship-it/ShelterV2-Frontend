@@ -60,12 +60,13 @@ export type UserState= {
         soundOn: boolean;
         volume: number;
         hapticOn: boolean;
+        totalGames: number;
         firstGame: boolean;
     }
 }
 
 const initialState: UserState = {
-    value : {email: null, username: null, token: null, refreshToken: null, stateOfGauges: null, numberDays: null, bestScore: null, currentCard: null, btnSoundOn: true, soundOn: true, volume: 50, hapticOn: true, firstGame: true},
+    value : {email: null, username: null, token: null, refreshToken: null, stateOfGauges: null, numberDays: null, bestScore: null, currentCard: null, btnSoundOn: true, soundOn: true, volume: 50, hapticOn: true, totalGames: 0, firstGame: true},
 };
 
 export const userSlice = createSlice({
@@ -96,12 +97,13 @@ export const userSlice = createSlice({
         setCurrentNumberDays:(state, action: PayloadAction<number>) =>{
             state.value.numberDays = action.payload
         },
-        setUserData:(state, action: PayloadAction<{bestScore: number; soundOn: boolean; volume: number; btnSoundOn: boolean; hapticOn: boolean}>) =>{
+        setUserData:(state, action: PayloadAction<{bestScore: number; soundOn: boolean; volume: number; btnSoundOn: boolean; hapticOn: boolean; totalGames: number}>) =>{
             state.value.bestScore = action.payload.bestScore;
             state.value.soundOn = action.payload.soundOn;
             state.value.volume = action.payload.volume;
             state.value.btnSoundOn = action.payload.btnSoundOn;
             state.value.hapticOn = action.payload.hapticOn ?? true;
+            state.value.totalGames = action.payload.totalGames ?? 0;
         },
         updateBestScore: (state, action: PayloadAction<number>) =>{
             state.value.bestScore = action.payload

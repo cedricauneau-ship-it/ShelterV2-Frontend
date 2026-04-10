@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingView, ImageBackground } from "react-native"
 import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
 import { useSelector, useDispatch } from "react-redux";
-import { setGameState, setUserData, signout, setFirstGame } from "../reducers/user";
+import { setGameState, setUserData, signout, setFirstGame, updateSettings } from "../reducers/user";
 import { useCallback, useState, useEffect } from "react";
 import { FontAwesome } from "@expo/vector-icons";
 
@@ -30,7 +30,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
             })
             .then(response => response.json())
             .then(data => {
-                dispatch(setUserData({ bestScore: data.bestScore, soundOn: data.settings.soundOn, volume: data.settings.volume, btnSoundOn: data.settings.btnSoundOn }));
+                dispatch(setUserData({ bestScore: data.bestScore, soundOn: data.settings.soundOn, volume: data.settings.volume, btnSoundOn: data.settings.btnSoundOn, hapticOn: data.settings.hapticOn ?? true, totalGames: data.totalGames ?? 0 }));
                 AudioManager.init({ volume: data.settings.volume, soundOn: data.settings.soundOn, btnSoundOn: data.settings.btnSoundOn });
                 if (!data.currentGameId) {
                     setCurrentGame(false);
@@ -80,21 +80,34 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
         });
     };
      
-    const handleNewGame = () => {
+    const shouldShowAd = (total: number): boolean => {
+        // Pub à partir de la 3ème partie (index 2), puis toutes les 2 parties
+        // total = nombre de parties TERMINÉES avant cette nouvelle partie
+        // Parties déclenchant une pub : 3, 5, 7, 9...
+        return total >= 2 && total % 2 === 0;
+    };
+
+    const startNewGame = () => {
         fetchWithAuth(`/games/new`, {
             method: 'POST',
         })
-        .then(response => {
-            return response.json()})
+        .then(response => response.json())
         .then(data => {
-            if (data.error) {
-                return;
-            } else {
-                AudioManager.playEffect('click');
-                dispatch(setGameState({ stateOfGauges: data.game.stateOfGauges, numberDays: data.game.numberDays, currentCard: data.game.currentCard }));
-                navigation.navigate('Game', { screen: 'Game' });
-            };
-        });      
+            if (data.error) return;
+            AudioManager.playEffect('click');
+            dispatch(setGameState({ stateOfGauges: data.game.stateOfGauges, numberDays: data.game.numberDays, currentCard: data.game.currentCard }));
+            navigation.navigate('Game', { screen: 'Game' });
+        });
+    };
+
+    const handleNewGame = () => {
+        if (shouldShowAd(user.totalGames)) {
+            // TODO: afficher la pub interstitielle ici, puis appeler startNewGame() dans le callback onAdClosed
+            console.log(`[Ad] Partie ${user.totalGames + 1} → pub déclenchée`);
+            startNewGame(); // temporaire : on lance directement jusqu'à l'intégration AdMob
+        } else {
+            startNewGame();
+        }
     };
 
     const handleNavigateParametres = () => {
@@ -131,6 +144,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
                 </View>
                 <View style={styles.main}>
                     <Text style={styles.title}>shelter</Text>
+                    {user.bestScore !== null && user.bestScore > 0 && (
+                        <Text style={styles.bestScore}>meilleur score : {user.bestScore} jour{user.bestScore > 1 ? 's' : ''}</Text>
+                    )}
                     <View style={styles.buttonPanel}>
                         {currentGame &&<TouchableOpacity onPress={() => handleCurrentGame()} style={styles.button} activeOpacity={0.8}>
                             <Text style={styles.btnText}>reprendre</Text>
@@ -183,6 +199,14 @@ const styles = StyleSheet.create({
         textShadowOffset: { width: 3, height: 3 },
         textShadowRadius: 2,
         marginVertical: 60
+    },
+    bestScore: {
+        fontSize: 16,
+        fontFamily: 'ArialRounded',
+        color: '#ae9273',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginTop: -40,
     },
     buttonPanel: {
         justifyContent: 'flex-start',
