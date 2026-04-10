@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, ImageBackground, Image, TouchableOpacity, Modal, Switch } from "react-native"
+import { View, Text, StyleSheet, ImageBackground, Image, TouchableOpacity, Modal } from "react-native"
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
-import Slider from '@react-native-community/slider';
+import CustomSlider from '../components/CustomSlider';
+import CustomSwitch from '../components/CustomSwitch';
 import { useState, useEffect } from "react";
 import { useFetchWithAuth } from "../components/fetchWithAuth";
 import { useSelector, useDispatch } from "react-redux";
@@ -115,10 +116,10 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
             <View style={styles.main}>
                 <View style={styles.darkBackground}>
                     <View style={styles.cardContainer}>
+                        <Text style={styles.title} >PARAMÈTRES</Text>
                         <View style={styles.setupContainer}>
-                            <Text style={styles.title} >PARAMÈTRES</Text>
                             <Text style={styles.text}>Volume : {volume}</Text>
-                            <Slider
+                            <CustomSlider
                                 value={volume}
                                 onValueChange={handleVolumeChange}
                                 maximumValue={100}
@@ -127,37 +128,20 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
                                 minimumTrackTintColor="#388FF0"
                                 maximumTrackTintColor="#524743"
                                 thumbTintColor="#FFE8BF"
-                                style={styles.volumeSlider}
+                                trackHeight={18}
+                                thumbSize={26}
                             />
                             <View style={styles.settingRow}>
                                 <Text style={styles.text}>Musique</Text>
-                                <Switch
-                                    value={soundEnabled}
-                                    onValueChange={toggleSound}
-                                    thumbColor="#FFE8BF"
-                                    trackColor={{ false: '#D05A34', true: '#74954E' }}
-                                    ios_backgroundColor="#D05A34"
-                                />
+                                <CustomSwitch value={soundEnabled} onValueChange={toggleSound} />
                             </View>
                             <View style={styles.settingRow}>
                                 <Text style={styles.text}>Bruitage</Text>
-                                <Switch
-                                    value={soundClicEnabled}
-                                    onValueChange={toggleSoundClic}
-                                    thumbColor="#FFE8BF"
-                                    trackColor={{ false: '#D05A34', true: '#74954E' }}
-                                    ios_backgroundColor="#D05A34"
-                                />
+                                <CustomSwitch value={soundClicEnabled} onValueChange={toggleSoundClic} />
                             </View>
                             <View style={styles.settingRow}>
                                 <Text style={styles.text}>Vibrations</Text>
-                                <Switch
-                                    value={hapticEnabled}
-                                    onValueChange={toggleHaptic}
-                                    thumbColor="#FFE8BF"
-                                    trackColor={{ false: '#D05A34', true: '#74954E' }}
-                                    ios_backgroundColor="#D05A34"
-                                />
+                                <CustomSwitch value={hapticEnabled} onValueChange={toggleHaptic} />
                             </View>
                         </View>
                         <TouchableOpacity onPress={() => {AudioManager.playEffect('click'); setModalVisible(true);}}>
@@ -281,29 +265,30 @@ const styles = StyleSheet.create({
         fontFamily: 'ArialRounded',
         fontSize: 26,
         textAlign: 'center',
-        marginBottom: 5
+        marginBottom: 5,
+        marginTop: 20
     },
     setupContainer: {
-        justifyContent: 'center',
+        flex: 1,
+        justifyContent: 'space-evenly',
         alignItems: 'stretch',
         width: '80%',
-        paddingTop :20
-    },
-    volumeSlider: {
-        width: '100%',
-        height: 40,
+        margin: 30
     },
     settingRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginTop: 20,
+        height: 60,
+        marginTop: 10,
+    },
+    switchWrapper: {
+        transform: [{ scaleX: 1.6 }, { scaleY: 1.3 }],
+        marginRight: 8,
     },
     text: {
         color: '#FFE8BF',
         fontSize: 22,
-        marginBottom: 15,
-        marginTop: 25,
         fontFamily: 'ArialRounded',
     },
     btnContainer: {

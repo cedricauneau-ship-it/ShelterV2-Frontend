@@ -201,12 +201,12 @@ const styles = StyleSheet.create({
         marginVertical: 60
     },
     bestScore: {
-        fontSize: 16,
+        fontSize: 19,
         fontFamily: 'ArialRounded',
-        color: '#ae9273',
+        color: '#ffffffc7',
         textTransform: 'uppercase',
         letterSpacing: 1,
-        marginTop: -40,
+        marginTop: -35,
     },
     buttonPanel: {
         justifyContent: 'flex-start',

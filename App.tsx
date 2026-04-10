@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { useFonts } from 'expo-font';
@@ -27,10 +28,30 @@ const Stack = createNativeStackNavigator();
 export default function App() {
 
 
-  // Cache la barre de navigation Android (mode immersif)
+  const hideNavBar = () => NavigationBar.setVisibilityAsync('hidden');
+
+  // Cache la barre au démarrage
   useEffect(() => {
-    NavigationBar.setVisibilityAsync('hidden');
-    NavigationBar.setBehaviorAsync('inset-swipe'); // réapparaît brièvement si l'utilisateur swipe depuis le bas, puis se cache à nouveau
+    NavigationBar.setBehaviorAsync('inset-swipe');
+    hideNavBar();
+  }, []);
+
+  // Re-cache automatiquement 1.5s après que l'utilisateur l'ait révélée
+  useEffect(() => {
+    const sub = NavigationBar.addVisibilityListener(({ visibility }) => {
+      if (visibility === 'visible') {
+        setTimeout(hideNavBar, 1500);
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  // Re-cache quand l'app revient au premier plan
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') hideNavBar();
+    });
+    return () => sub.remove();
   }, []);
 
   // Charge les sons et lance la musique de fond du menu
@@ -81,7 +102,7 @@ export default function App() {
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <GestureHandlerRootView>
-          <NavigationContainer>
+          <NavigationContainer onStateChange={hideNavBar}>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
               <Stack.Screen name="SplashScreen" component={SplashScreen} />
               <Stack.Screen name="Introduction" component={IntroductionScreen} />

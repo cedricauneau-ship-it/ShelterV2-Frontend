@@ -497,13 +497,15 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                 <View style={styles.main}>
                     <Animated.View style={[styles.darkBackground, shakeStyle]}>
                         <View style={styles.cardContainer}>
+                            {!gameover && (
                             <View style={styles.gaugesContainer}>
                                 <Gauge icon={require('../assets/icon-hunger.png')} color='#f28f27' percent={hunger} indicator={hungerIndicator} decrease={food === 0}/>
                                 <Gauge icon={require('../assets/icon-security.png')} color='#378ded' percent={security} indicator={securityIndicator} decrease={false}/>
                                 <Gauge icon={require('../assets/icon-health.png')} color='#cf5a34' percent={health} indicator={healthIndicator} decrease={false}/>
                                 <Gauge icon={require('../assets/icon-moral.png')} color='#6b8a48' percent={moral} indicator={moralIndicator} decrease={false}/>
                             </View>
-                            <View style={styles.textContainer}>
+                            )}
+                            <View style={[styles.textContainer, gameover && styles.textContainerGameover]}>
 
                                 {/*GAME*/}
                                 {!gameover && 
@@ -528,7 +530,11 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                                     <Text style={styles.textDeath}>
                                         {lastResponse?.death?.description}
                                     </Text>
-                                    <Text style={[styles.deathCause, {color: lastResponse?.death ? changeColor(lastResponse?.death?.type) : '#ffe7bf'}]}>
+                                    <Text
+                                        style={[styles.deathCause, {color: lastResponse?.death ? changeColor(lastResponse?.death?.type) : '#ffe7bf'}]}
+                                        numberOfLines={1}
+                                        adjustsFontSizeToFit
+                                    >
                                         {lastResponse?.death?.title?.toUpperCase()}
                                     </Text>
                                 </Animated.View>
@@ -670,6 +676,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 20,
     },
+    textContainerGameover:{
+        height: undefined,
+        flex: 1,
+    },
     textEvent: {
         color: '#ffe7bf',
         fontFamily: 'ArialRounded',
@@ -677,10 +687,11 @@ const styles = StyleSheet.create({
         textAlign: 'center'
     },
     gameoverSection:{
-        gap: 10,
-        justifyContent: 'center',
+        flex: 1,
+        width: '100%',
+        justifyContent: 'space-evenly',
         alignItems: 'center',
-        padding : 20
+        paddingHorizontal: 20,
     },
     textDeath: {
         color: '#ffe7bf',
