@@ -2,12 +2,17 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingVie
 import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
 import { useSelector, useDispatch } from "react-redux";
 import { setGameState, setUserData, signout, setFirstGame, updateSettings } from "../reducers/user";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { FontAwesome } from "@expo/vector-icons";
+import { InterstitialAd, AdEventType, TestIds, mobileAds } from 'react-native-google-mobile-ads';
 
 import AudioManager from '../modules/audioManager';
 
 import { useFetchWithAuth } from '../components/fetchWithAuth';
+
+const AD_UNIT_ID = __DEV__
+    ? TestIds.INTERSTITIAL
+    : 'ca-app-pub-8874754604524879/4556272429';
 
 type HomeScreenProps = {
     navigation: NavigationProp<ParamListBase>;
@@ -17,9 +22,54 @@ type HomeScreenProps = {
 export default function HomeScreen({ navigation }: HomeScreenProps ) {
     const fetchWithAuth = useFetchWithAuth();
     const [currentGame, setCurrentGame] = useState(false);
-    
+    const [adLoaded, setAdLoaded] = useState(false);
+    const pendingGameStart = useRef<(() => void) | null>(null);
+    const interstitial = useRef<InterstitialAd | null>(null);
+
     const user = useSelector((state: string) => state.user.value);
     const dispatch = useDispatch();
+
+    // Initialise AdMob et précharge la pub
+    useEffect(() => {
+        mobileAds()
+            .initialize()
+            .then(() => {
+                const ad = InterstitialAd.createForAdRequest(AD_UNIT_ID, {
+                    requestNonPersonalizedAdsOnly: true,
+                });
+                interstitial.current = ad;
+
+                const onLoaded = ad.addAdEventListener(AdEventType.LOADED, () => {
+                    setAdLoaded(true);
+                });
+                const onClosed = ad.addAdEventListener(AdEventType.CLOSED, () => {
+                    setAdLoaded(false);
+                    ad.load();
+                    if (pendingGameStart.current) {
+                        pendingGameStart.current();
+                        pendingGameStart.current = null;
+                    }
+                });
+                const onError = ad.addAdEventListener(AdEventType.ERROR, () => {
+                    setAdLoaded(false);
+                    if (pendingGameStart.current) {
+                        pendingGameStart.current();
+                        pendingGameStart.current = null;
+                    }
+                });
+
+                ad.load();
+
+                return () => {
+                    onLoaded();
+                    onClosed();
+                    onError();
+                };
+            })
+            .catch(() => {
+                // AdMob indisponible, le jeu continue normalement
+            });
+    }, []);
 
     // les fetch doivent se faire avec fetchWithAuth pour gérer le refresh token 
 
@@ -81,16 +131,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
     };
      
     const shouldShowAd = (total: number): boolean => {
-        // Pub à partir de la 3ème partie (index 2), puis toutes les 2 parties
-        // total = nombre de parties TERMINÉES avant cette nouvelle partie
-        // Parties déclenchant une pub : 3, 5, 7, 9...
         return total >= 2 && total % 2 === 0;
     };
 
     const startNewGame = () => {
-        fetchWithAuth(`/games/new`, {
-            method: 'POST',
-        })
+        fetchWithAuth(`/games/new`, { method: 'POST' })
         .then(response => response.json())
         .then(data => {
             if (data.error) return;
@@ -101,10 +146,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
     };
 
     const handleNewGame = () => {
-        if (shouldShowAd(user.totalGames)) {
-            // TODO: afficher la pub interstitielle ici, puis appeler startNewGame() dans le callback onAdClosed
-            console.log(`[Ad] Partie ${user.totalGames + 1} → pub déclenchée`);
-            startNewGame(); // temporaire : on lance directement jusqu'à l'intégration AdMob
+        if (shouldShowAd(user.totalGames) && adLoaded && interstitial.current) {
+            pendingGameStart.current = startNewGame;
+            interstitial.current.show();
         } else {
             startNewGame();
         }

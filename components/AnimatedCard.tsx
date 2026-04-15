@@ -74,11 +74,12 @@ export default function AnimatedCard({ image, isConsequence, leftChoiceText, rig
         },
       ],
       backfaceVisibility: "hidden",
+      // Fix Android : backfaceVisibility non fiable, on force l'opacité
+      opacity: flipRotation.value > 90 ? 0 : 1,
     };
   });
 
   const backAnimatedStyle = useAnimatedStyle((): ViewStyle => {
-
     return {
       transform: [
         {
@@ -86,6 +87,7 @@ export default function AnimatedCard({ image, isConsequence, leftChoiceText, rig
         },
       ],
       backfaceVisibility: "hidden",
+      opacity: flipRotation.value < 90 ? 0 : 1,
       position: "absolute",
       top: 0,
       left: 0,
@@ -169,10 +171,9 @@ useAnimatedReaction(
               style={[styles.textSection, {paddingVertical : swipeSide === 'center' ? 0 : 16}]}
             >
               {swipeSide !== 'center' &&
-                <Animated.Text  // smooth fade on the text
-                  key={swipeSide} // trigger anim when swipeSide change
+                <Animated.Text
+                  key={swipeSide}
                   entering={FadeIn.duration(150)}
-                  exiting={FadeOut.duration(150)}
                   style={[
                     styles.textChoice,
                     { textAlign: swipeSide === 'right' ? 'left' : 'right' }

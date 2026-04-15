@@ -508,11 +508,10 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                             <View style={[styles.textContainer, gameover && styles.textContainerGameover]}>
 
                                 {/*GAME*/}
-                                {!gameover && 
-                                    <Animated.Text  // smooth fade on the text
-                                        key={currentCard?.text} // trigger anim when currentCard?.text change
+                                {!gameover &&
+                                    <Animated.Text
+                                        key={currentCard?.key}
                                         entering={FadeIn.duration(200)}
-                                        exiting={FadeOut.duration(200)}
                                         style={styles.textEvent}
                                         >
                                         {currentCard?.text}

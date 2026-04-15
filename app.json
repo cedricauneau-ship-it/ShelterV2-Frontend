@@ -38,7 +38,13 @@
     },
     "plugins": [
       "@react-native-google-signin/google-signin",
-      "expo-navigation-bar"
+      "expo-navigation-bar",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-8874754604524879~2508693583"
+        }
+      ]
     ],
     "extra": {
       "eas": {

@@ -79,26 +79,88 @@ export function getImage(type : String){
             return require('../assets/pictures/icon-drugs.png');
 
 
-        // ACHIEVEMENT
-        case "survival-10": 
-            return require('../assets/pictures/icon-survival-10.png');
-        case "survival-20": 
-            return require('../assets/pictures/icon-survival-20.png');
-        case "survival-30": 
-            return require('../assets/pictures/icon-survival-30.png');
-        case "survival-50": 
-            return require('../assets/pictures/icon-survival-50.png');
-        case "survival-100": 
-            return require('../assets/pictures/icon-survival-100.png');
-        case "heart": 
-            return require('../assets/pictures/icon-heart.png');
+        // ── Alias cartes (seed → fichier) ──────────────────────────────
+        case 'shelter':
+            return require('../assets/pictures/icon-house.png');
+        case 'ruins':
+            return require('../assets/pictures/icon-city.png');
+        case 'supermarket':
+            return require('../assets/pictures/icon-cans.png');
+        case 'door':
+            return require('../assets/pictures/icon-visit.png');
+        case 'water':
+            return require('../assets/pictures/icon-outside.png');
+        case 'fire':
+            return require('../assets/pictures/icon-chaos.png');
+        case 'medicine':
+            return require('../assets/pictures/icon-drugs.png');
+        case 'hunger':
+            return require('../assets/pictures/icon-rat.png');
+        case 'storm':
+            return require('../assets/pictures/icon-chaos.png');
+        case 'epidemic':
+            return require('../assets/pictures/icon-radioactive.png');
+        case 'raid':
+            return require('../assets/pictures/icon-fight.png');
+        case 'helicopter':
+            return require('../assets/pictures/icon-box.png');
 
-        // TUTO
-        case "swipe": 
+        // ── Achievements ────────────────────────────────────────────────
+        case 'survival-10':
+            return require('../assets/pictures/icon-survival-10.png');
+        case 'survival-20':
+            return require('../assets/pictures/icon-survival-20.png');
+        case 'survival-30':
+            return require('../assets/pictures/icon-survival-30.png');
+        case 'survival-50':
+            return require('../assets/pictures/icon-survival-50.png');
+        case 'survival-100':
+            return require('../assets/pictures/icon-survival-100.png');
+        case 'heart':
+        case 'health_max':
+            return require('../assets/pictures/icon-heart.png');
+        case 'day1':
+            return require('../assets/pictures/icon-survival-10.png');
+        case 'day7':
+            return require('../assets/pictures/icon-survival-20.png');
+        case 'day14':
+            return require('../assets/pictures/icon-survival-30.png');
+        case 'day30':
+            return require('../assets/pictures/icon-survival-50.png');
+        case 'day50':
+            return require('../assets/pictures/icon-survival-100.png');
+        case 'hunger_high':
+            return require('../assets/pictures/icon-cans.png');
+        case 'security_max':
+            return require('../assets/pictures/icon-house.png');
+        case 'moral_max':
+            return require('../assets/pictures/icon-musician.png');
+        case 'last_breath':
+            return require('../assets/pictures/icon-depress.png');
+        case 'alone':
+        case 'loup_solitaire':
+            return require('../assets/pictures/icon-shadow.png');
+        case 'trade':
+        case 'commercant':
+            return require('../assets/pictures/icon-gift.png');
+        case 'explorer':
+        case 'explorateur':
+            return require('../assets/pictures/icon-expedition.png');
+        case 'doctor':
+        case 'medecin':
+            return require('../assets/pictures/icon-hospital.png');
+        case 'shield':
+        case 'protecteur':
+            return require('../assets/pictures/icon-child.png');
+        case 'solidaire':
+            return require('../assets/pictures/icon-group.png');
+
+        // ── Tuto ────────────────────────────────────────────────────────
+        case 'swipe':
             return require('../assets/pictures/icon-swipe.png');
 
         default:
             return require('../assets/pictures/icon-general.png');
-            
+
     }
 }
