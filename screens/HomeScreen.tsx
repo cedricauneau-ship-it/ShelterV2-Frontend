@@ -2,17 +2,12 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingVie
 import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
 import { useSelector, useDispatch } from "react-redux";
 import { setGameState, setUserData, signout, setFirstGame, updateSettings } from "../reducers/user";
-import { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { FontAwesome } from "@expo/vector-icons";
-import { InterstitialAd, AdEventType, TestIds, mobileAds } from 'react-native-google-mobile-ads';
-
 import AudioManager from '../modules/audioManager';
+import AdManager from '../modules/adManager';
 
 import { useFetchWithAuth } from '../components/fetchWithAuth';
-
-const AD_UNIT_ID = __DEV__
-    ? TestIds.INTERSTITIAL
-    : 'ca-app-pub-8874754604524879/4556272429';
 
 type HomeScreenProps = {
     navigation: NavigationProp<ParamListBase>;
@@ -22,53 +17,13 @@ type HomeScreenProps = {
 export default function HomeScreen({ navigation }: HomeScreenProps ) {
     const fetchWithAuth = useFetchWithAuth();
     const [currentGame, setCurrentGame] = useState(false);
-    const [adLoaded, setAdLoaded] = useState(false);
-    const pendingGameStart = useRef<(() => void) | null>(null);
-    const interstitial = useRef<InterstitialAd | null>(null);
 
     const user = useSelector((state: string) => state.user.value);
     const dispatch = useDispatch();
 
-    // Initialise AdMob et précharge la pub
+    // Initialise AdMob
     useEffect(() => {
-        mobileAds()
-            .initialize()
-            .then(() => {
-                const ad = InterstitialAd.createForAdRequest(AD_UNIT_ID, {
-                    requestNonPersonalizedAdsOnly: true,
-                });
-                interstitial.current = ad;
-
-                const onLoaded = ad.addAdEventListener(AdEventType.LOADED, () => {
-                    setAdLoaded(true);
-                });
-                const onClosed = ad.addAdEventListener(AdEventType.CLOSED, () => {
-                    setAdLoaded(false);
-                    ad.load();
-                    if (pendingGameStart.current) {
-                        pendingGameStart.current();
-                        pendingGameStart.current = null;
-                    }
-                });
-                const onError = ad.addAdEventListener(AdEventType.ERROR, () => {
-                    setAdLoaded(false);
-                    if (pendingGameStart.current) {
-                        pendingGameStart.current();
-                        pendingGameStart.current = null;
-                    }
-                });
-
-                ad.load();
-
-                return () => {
-                    onLoaded();
-                    onClosed();
-                    onError();
-                };
-            })
-            .catch(() => {
-                // AdMob indisponible, le jeu continue normalement
-            });
+        AdManager.initialize();
     }, []);
 
     // les fetch doivent se faire avec fetchWithAuth pour gérer le refresh token 
@@ -130,10 +85,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
         });
     };
      
-    const shouldShowAd = (total: number): boolean => {
-        return total >= 2 && total % 2 === 0;
-    };
-
     const startNewGame = () => {
         fetchWithAuth(`/games/new`, { method: 'POST' })
         .then(response => response.json())
@@ -146,9 +97,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
     };
 
     const handleNewGame = () => {
-        if (shouldShowAd(user.totalGames) && adLoaded && interstitial.current) {
-            pendingGameStart.current = startNewGame;
-            interstitial.current.show();
+        if (AdManager.shouldShow(user.totalGames) && AdManager.isLoaded()) {
+            AdManager.show(startNewGame);
         } else {
             startNewGame();
         }
