@@ -30,18 +30,17 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
 
     useFocusEffect(
         useCallback(() => {
-            setCurrentGame(false); // reset avant le fetch pour éviter l'affichage fantôme
             fetchWithAuth(`/users/data`, {
                 method: 'GET',
             })
             .then(response => response.json())
             .then(data => {
-                if (!data || data.error) return;
-                dispatch(setUserData({ bestScore: data.bestScore, soundOn: data.settings.soundOn, volume: data.settings.volume, btnSoundOn: data.settings.btnSoundOn, hapticOn: data.settings.hapticOn ?? true, totalGames: data.totalGames ?? 0 }));
+                if (!data || !data.settings) return;
+                dispatch(setUserData({ bestScore: data.bestScore ?? 0, soundOn: data.settings.soundOn, volume: data.settings.volume, btnSoundOn: data.settings.btnSoundOn, hapticOn: data.settings.hapticOn ?? true, totalGames: data.totalGames ?? 0 }));
                 AudioManager.init({ volume: data.settings.volume, soundOn: data.settings.soundOn, btnSoundOn: data.settings.btnSoundOn });
                 setCurrentGame(!!data.currentGameId);
             })
-            .catch(() => setCurrentGame(false));
+            .catch(err => console.error('[HomeScreen] fetch /users/data :', err));
         }, [])
     );
 
