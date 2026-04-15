@@ -24,6 +24,7 @@ class AdManager {
   private static ad: any = null;
   private static loaded = false;
   private static initialized = false;
+  private static gamesStarted = 0; // compteur local, persiste pendant la session
 
   static async initialize(): Promise<void> {
     if (!adAvailable || this.initialized) return;
@@ -64,6 +65,12 @@ class AdManager {
 
   static isLoaded(): boolean {
     return this.loaded;
+  }
+
+  // Appelé à chaque nouvelle partie démarrée — pub à la 3ème, 5ème, 7ème...
+  static shouldShow(): boolean {
+    this.gamesStarted++;
+    return this.gamesStarted >= 3 && (this.gamesStarted - 1) % 2 === 0;
   }
 
   static show(onClosed: () => void): void {
