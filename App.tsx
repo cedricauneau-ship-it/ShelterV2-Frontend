@@ -32,7 +32,6 @@ export default function App() {
 
   // Cache la barre au démarrage
   useEffect(() => {
-    NavigationBar.setBehaviorAsync('inset-swipe');
     hideNavBar();
   }, []);
 

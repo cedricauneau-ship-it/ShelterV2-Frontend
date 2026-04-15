@@ -224,6 +224,7 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
                     <TextInput
                         style={styles.input}
                         placeholder="Peudo"
+                        placeholderTextColor={'black'}
                         autoCapitalize="none"
                         keyboardType='default'
                         autoComplete="username"
@@ -235,6 +236,7 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
                         <TextInput 
                             style={styles.passwordInput}
                             placeholder="Password"
+                            placeholderTextColor={'black'}
                             autoCapitalize="none"
                             textContentType="password"
                             autoCorrect = {false}

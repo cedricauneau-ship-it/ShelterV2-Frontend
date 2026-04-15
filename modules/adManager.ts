@@ -10,7 +10,7 @@ try {
   InterstitialAd = admob.InterstitialAd;
   AdEventType = admob.AdEventType;
   TestIds = admob.TestIds;
-  mobileAds = admob.mobileAds;
+  mobileAds = admob.default ?? admob; // mobileAds est le default export
   adAvailable = true;
 } catch (e) {
   console.warn('[AdManager] react-native-google-mobile-ads non disponible :', e);
