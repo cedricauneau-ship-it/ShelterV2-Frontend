@@ -18,6 +18,9 @@
     "preview": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_BACKEND_ADDRESS": "https://shelterv2-backend-production.up.railway.app"
       }
     },
     "production": {
@@ -26,7 +29,8 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EX_DEV_CLIENT_NETWORK_INSPECTOR": "false"
+        "EX_DEV_CLIENT_NETWORK_INSPECTOR": "false",
+        "EXPO_PUBLIC_BACKEND_ADDRESS": "https://shelterv2-backend-production.up.railway.app"
       }
     }
   }
