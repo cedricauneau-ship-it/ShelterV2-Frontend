@@ -124,7 +124,7 @@ class AudioManager {
         }
       });
     } catch (e) {
-      console.error(`Erreur lecture du son ${type}:`, e);
+      if (__DEV__) console.error(`Erreur lecture du son ${type}:`, e);
     }
   }
 

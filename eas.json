@@ -5,6 +5,9 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EX_DEV_CLIENT_NETWORK_INSPECTOR": "true"
       }
     },
     "apk": {
@@ -18,8 +21,12 @@
       }
     },
     "production": {
+      "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EX_DEV_CLIENT_NETWORK_INSPECTOR": "false"
       }
     }
   }

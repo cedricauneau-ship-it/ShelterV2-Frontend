@@ -1,1 +1,1 @@
-export const DEPLOYED_BACKEND_ADDRESS = process.env.EXPO_PUBLIC_BACKEND_URL ?? 'http://localhost:3000';
+export const DEPLOYED_BACKEND_ADDRESS = process.env.EXPO_PUBLIC_BACKEND_ADDRESS ?? 'http://localhost:3000';

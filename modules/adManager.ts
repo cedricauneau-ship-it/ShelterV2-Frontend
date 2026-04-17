@@ -12,7 +12,7 @@ try {
   mobileAds = admob.default ?? admob;
   adAvailable = true;
 } catch (e) {
-  console.warn('[AdManager] react-native-google-mobile-ads non disponible :', e);
+  if (__DEV__) console.warn('[AdManager] react-native-google-mobile-ads non disponible :', e);
 }
 
 const PROD_AD_UNIT_ID = 'ca-app-pub-8874754604524879/4556272429';
@@ -36,7 +36,7 @@ class AdManager {
       this.initialized = true;
       this.createAndLoad();
     } catch (e) {
-      console.warn('[AdManager] Échec initialisation :', e);
+      if (__DEV__) console.warn('[AdManager] Échec initialisation :', e);
     }
   }
 
@@ -62,7 +62,7 @@ class AdManager {
 
       this.ad.load();
     } catch (e) {
-      console.warn('[AdManager] Échec création pub :', e);
+      if (__DEV__) console.warn('[AdManager] Échec création pub :', e);
     }
   }
 
@@ -87,7 +87,7 @@ class AdManager {
       });
       this.ad.show();
     } catch (e) {
-      console.warn('[AdManager] Échec affichage pub :', e);
+      if (__DEV__) console.warn('[AdManager] Échec affichage pub :', e);
       onClosed();
     }
   }

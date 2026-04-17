@@ -93,7 +93,7 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
                 return;
             }
             SetSigninError('Erreur de connexion Google');
-            console.error('[Google SignIn]', error);
+            if (__DEV__) console.error('[Google SignIn]', error);
         }
     };
 
@@ -124,7 +124,7 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
                 }
             })
             .catch(error => {
-                console.error('Erreur de réseau', error)
+                if (__DEV__) console.error('Erreur de réseau', error)
                 SetSigninError('Erreur de connexion au serveur')
             });
         }
@@ -172,7 +172,7 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
                     }
                 })
             .catch(error => {
-                console.error('Erreur réseau', error)
+                if (__DEV__) console.error('Erreur réseau', error)
                 setSignupError('Erreur de connexion au serveur')
             });
         };
@@ -209,7 +209,7 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
                 }
             } catch (error) {
                 Alert.alert('Erreur', 'Impossible de contacter le serveur')
-                console.error(error);
+                if (__DEV__) console.error(error);
                 
             } finally {
                 setLoading(false);

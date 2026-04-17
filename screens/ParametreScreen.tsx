@@ -81,7 +81,7 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
                 }));
             }
         })
-        .catch(err => console.error('Erreur PUT /settings :', err));
+        .catch(err => { if (__DEV__) console.error('Erreur PUT /settings :', err); });
 
         // Navigation immédiate
         navigation.navigate('Home', { screen: 'Home' });
@@ -100,7 +100,7 @@ export default function ParametreScreen({ navigation }: ParametreScreenProps ) {
             }
         })
         .catch(error => {
-            console.error('Erreur lors de la réinitialisation du compte :', error);
+            if (__DEV__) console.error('Erreur lors de la réinitialisation du compte :', error);
         });
     };
 

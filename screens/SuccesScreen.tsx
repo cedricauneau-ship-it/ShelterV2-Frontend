@@ -45,7 +45,7 @@ export default function SuccesScreen({ navigation }: SuccesScreenProps ) {
         .then(data => {
             setSuccesData(data.achievements ?? [])
         })
-        .catch(err => console.error('Erreur fetch succes', err))
+        .catch(err => { if (__DEV__) console.error('Erreur fetch succes', err); })
 
         //fetch top players
         fetchWithAuth(`/users/topScores`, {
@@ -55,7 +55,7 @@ export default function SuccesScreen({ navigation }: SuccesScreenProps ) {
         .then(data=>{
           setTopPlayers(data.topScores ?? [])
         })
-        .catch(err=>console.error('Erreur fetch Top Players', err))
+        .catch(err => { if (__DEV__) console.error('Erreur fetch Top Players', err); })
 
         //fetch unlockedAchievements
         fetchWithAuth(`/users/unlockedAchievements`, {
@@ -65,7 +65,7 @@ export default function SuccesScreen({ navigation }: SuccesScreenProps ) {
         .then(data=>{
             setUnlockedAchievement(data.unlockedAchievements ?? [])
         })
-        .catch(err=>console.error('Erreur fetch unlockedAchievements', err))
+        .catch(err => { if (__DEV__) console.error('Erreur fetch unlockedAchievements', err); })
     },[]))
 
     const succes = useMemo(() => {

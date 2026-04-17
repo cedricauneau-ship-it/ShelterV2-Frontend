@@ -97,7 +97,7 @@ export const userSlice = createSlice({
         setCurrentNumberDays:(state, action: PayloadAction<number>) =>{
             state.value.numberDays = action.payload
         },
-        setUserData:(state, action: PayloadAction<{bestScore: number; soundOn: boolean; volume: number; btnSoundOn: boolean; hapticOn: boolean; totalGames: number}>) =>{
+        setUserData:(state, action: PayloadAction<{bestScore: number; soundOn: boolean; volume: number; btnSoundOn: boolean; hapticOn: boolean; totalGames: number; currentGameId?: string | null}>) =>{
             state.value.bestScore = action.payload.bestScore;
             state.value.soundOn = action.payload.soundOn;
             state.value.volume = action.payload.volume;

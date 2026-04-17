@@ -8,8 +8,9 @@ import game from './reducers/gameSlice';
 // --- Configuration de persistance ---
 const persistConfig = {
   key: 'shelter',
+  version: 2, // reset le cache persisté (fix état corrompu)
   storage: AsyncStorage,
-  whitelist: ['user', 'game'], // facultatif : garde ces slices persistées
+  whitelist: ['user', 'game'],
 };
 
 // --- Combine les reducers ---

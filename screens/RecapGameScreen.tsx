@@ -6,6 +6,7 @@ import { setGameState, updateBestScore } from "../reducers/user";
 import { useCallback, useState } from "react";
 import Achievement from '../components/Achievement'
 import AudioManager from '../modules/audioManager';
+import AdManager from '../modules/adManager';
 
 type RecapGameScreenProps = {
     navigation: NavigationProp<ParamListBase>;
@@ -111,22 +112,27 @@ export default function RecapGameScreen({ navigation, route }: RecapGameScreenPr
         navigation.navigate('Home', { screen: 'Home' });
     };
 
+    const startNewPart = () => {
+        fetchWithAuth(`/games/new`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) return;
+            AudioManager.playEffect('click');
+            dispatch(setGameState({ stateOfGauges: data.game.stateOfGauges, numberDays: data.game.numberDays, currentCard: data.game.currentCard }));
+            navigation.navigate('Game', { screen: 'Game' });
+        });
+    };
+
     const handleNewPart = () => {
-            fetchWithAuth(`/games/new`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-            })
-            .then(response => response.json())
-            .then(data => {            
-                if (data.error) {
-                    return;
-                } else {
-                    AudioManager.playEffect('click');
-                    dispatch(setGameState({ stateOfGauges: data.game.stateOfGauges, numberDays: data.game.numberDays, currentCard: data.game.currentCard }));
-                    navigation.navigate('Game', { screen: 'Game' });
-                };
-            });      
-        };
+        if (AdManager.shouldShow() && AdManager.isLoaded()) {
+            AdManager.show(startNewPart);
+        } else {
+            startNewPart();
+        }
+    };
 
     return (
         <ImageBackground source={require('../assets/background.jpg')} resizeMode="cover" style={styles.container}>

@@ -290,7 +290,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
             }
             
         } catch (err) {
-            console.error('[GameScreen] handleChoice error:', err);
+            if (__DEV__) console.error('[GameScreen] handleChoice error:', err);
         }
     }
 

@@ -1,7 +1,10 @@
-import { View, Text, TouchableOpacity, StyleSheet, ImageBackground, Image } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, ImageBackground, Image, Linking } from "react-native"
 import { NavigationProp, ParamListBase } from '@react-navigation/native';
 
 import AudioManager from '../modules/audioManager';
+import { DEPLOYED_BACKEND_ADDRESS } from "../modules/global";
+
+const BACKEND_ADDRESS = DEPLOYED_BACKEND_ADDRESS;
 
 type CreditScreenProps = {
     navigation: NavigationProp<ParamListBase>;
@@ -32,20 +35,13 @@ export default function CreditScreen({ navigation }: CreditScreenProps ) {
                                 <Text style={styles.nameTitle}>Projet réalisé par :</Text>
                             </View>
                             <View style={styles.nameContainer}>
-                                <Text style={styles.name}>Ahmed Hassainia</Text>
                                 <Text style={styles.name}>Cédric Auneau</Text>
-                                <Text style={styles.name}>Marion Trehin</Text>
-                                <Text style={styles.name}>Valentin Dubillot</Text>
                             </View>
                         </View>
 
-                        <View style={styles.nameSection}>
-                            <Image source={require('../assets/icon-lacapsule.png')} style={[styles.groupIcon]} />
-                            <View >
-                                <Text style={styles.nameTitle}>Remerciements :</Text>
-                            </View>
-                            <Text style={styles.name}>Un grand merci à Clovis Battello et à Ugo Tiberto pour leur accompagnement, ainsi qu'à La Capsule pour le contenu de la formation et les ressources mises à disposition.</Text>
-                        </View>
+                        <TouchableOpacity onPress={() => Linking.openURL(`${BACKEND_ADDRESS}/privacy-policy.html`)}>
+                            <Text style={styles.link}>Politique de confidentialité</Text>
+                        </TouchableOpacity>
 
                     </View>
                 </View>
@@ -136,6 +132,13 @@ const styles = StyleSheet.create({
         fontFamily: 'ArialRounded',
         fontSize: 16,
         textAlign: 'center'
+    },
+    link: {
+        color: '#8B7355',
+        fontFamily: 'ArialRounded',
+        fontSize: 14,
+        textDecorationLine: 'underline',
+        textAlign: 'center',
     }
 
 

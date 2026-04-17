@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingVie
 import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
 import { useSelector, useDispatch } from "react-redux";
 import { setGameState, setUserData, signout, setFirstGame, updateSettings } from "../reducers/user";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
 import AudioManager from '../modules/audioManager';
 import AdManager from '../modules/adManager';
@@ -35,12 +35,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
             })
             .then(response => response.json())
             .then(data => {
-                if (!data || !data.settings) return;
+                if (!data) return;
+                setCurrentGame(data.currentGameId != null);
+                if (!data.settings) return;
                 dispatch(setUserData({ bestScore: data.bestScore ?? 0, soundOn: data.settings.soundOn, volume: data.settings.volume, btnSoundOn: data.settings.btnSoundOn, hapticOn: data.settings.hapticOn ?? true, totalGames: data.totalGames ?? 0 }));
                 AudioManager.init({ volume: data.settings.volume, soundOn: data.settings.soundOn, btnSoundOn: data.settings.btnSoundOn });
-                setCurrentGame(!!data.currentGameId);
             })
-            .catch(err => console.error('[HomeScreen] fetch /users/data :', err));
+            .catch(err => { if (__DEV__) console.error('[HomeScreen] fetch /users/data :', err); });
         }, [])
     );
 
