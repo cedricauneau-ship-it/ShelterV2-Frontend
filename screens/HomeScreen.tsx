@@ -16,6 +16,17 @@ type HomeScreenProps = {
 // Persisté en mémoire (reset au kill de l'app, ce qui est ok)
 let popupDismissedAt = -1; // -1 = jamais dismiss, sinon nombre de parties au moment du dismiss
 let popupShownThisSession = false; // true = déjà affichée depuis le dernier dismiss
+let cachedHidePromo = false;
+let cachedIsPremium = false;
+
+const getXpPercent = (levelProgress: any): number => {
+    if (!levelProgress) return 0;
+    if (!levelProgress.xpForNextLevel) return 100; // niveau max
+    const range = levelProgress.xpForNextLevel - levelProgress.xpForCurrentLevel;
+    if (range <= 0) return 100;
+    const progress = levelProgress.currentXp - levelProgress.xpForCurrentLevel;
+    return Math.min(100, Math.max(0, (progress / range) * 100));
+};
 
 export default function HomeScreen({ navigation }: HomeScreenProps ) {
     const fetchWithAuth = useFetchWithAuth();
@@ -43,19 +54,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
                 if (!data) return;
                 setCurrentGame(data.currentGameId != null);
                 if (!data.settings) return;
-                dispatch(setUserData({ bestScore: data.bestScore ?? 0, soundOn: data.settings.soundOn, volume: data.settings.volume, btnSoundOn: data.settings.btnSoundOn, hapticOn: data.settings.hapticOn ?? true, totalGames: data.totalGames ?? 0, isPremium: data.isPremium ?? false, referralCode: data.referralCode ?? null }));
+                dispatch(setUserData({ bestScore: data.bestScore ?? 0, soundOn: data.settings.soundOn, volume: data.settings.volume, btnSoundOn: data.settings.btnSoundOn, hapticOn: data.settings.hapticOn ?? true, totalGames: data.totalGames ?? 0, isPremium: data.isPremium ?? false, referralCode: data.referralCode ?? null, xp: data.xp ?? 0, level: data.level ?? 1, levelProgress: data.levelProgress ?? null }));
                 AudioManager.init({ volume: data.settings.volume, soundOn: data.settings.soundOn, btnSoundOn: data.settings.btnSoundOn });
                 AdManager.setPremium(data.isPremium ?? false);
 
-                // Popup promo si pas premium et pas désactivée définitivement
-                if (!data.isPremium && !data.settings?.hidePromo && !popupShownThisSession) {
-                    const totalGames = data.totalGames ?? 0;
-                    // Afficher si jamais dismiss (-1) ou si 15 parties depuis le dernier dismiss
-                    if (popupDismissedAt === -1 || totalGames - popupDismissedAt >= 15) {
-                        setShowPromo(true);
-                        popupShownThisSession = true;
-                    }
-                }
+                // On stocke hidePromo pour la vérification dans handleNewGame
+                cachedHidePromo = data.settings?.hidePromo ?? false;
+                cachedIsPremium = data.isPremium ?? false;
             })
             .catch(err => { if (__DEV__) console.error('[HomeScreen] fetch /users/data :', err); });
         }, [])
@@ -111,9 +116,24 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
         });
     };
 
+    const shouldShowPromo = (): boolean => {
+        if (cachedIsPremium || cachedHidePromo || popupShownThisSession) return false;
+        const total = user.totalGames ?? 0;
+        return popupDismissedAt === -1 || total - popupDismissedAt >= 15;
+    };
+
     const handleNewGame = () => {
         if (AdManager.shouldShow() && AdManager.isLoaded()) {
-            AdManager.show(startNewGame);
+            AdManager.show(() => {
+                // Après la fermeture de la pub, proposer la promo
+                if (shouldShowPromo()) {
+                    popupShownThisSession = true;
+                    setShowPromo(true);
+                    // La partie se lancera quand l'utilisateur fermera la popup ou ira à la boutique
+                } else {
+                    startNewGame();
+                }
+            });
         } else {
             startNewGame();
         }
@@ -150,10 +170,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
         popupShownThisSession = false; // permettra de réapparaître dans 15 parties
         setShowPromo(false);
         setRemindLater(false);
+        startNewGame(); // lancer la partie après fermeture
     };
 
     const handleNeverShowPromo = () => {
         setShowPromo(false);
+        cachedHidePromo = true;
         // Persister le choix côté backend dans les settings
         fetchWithAuth('/users/settings', {
             method: 'PUT',
@@ -161,12 +183,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
             body: JSON.stringify({ hidePromo: true }),
         }).catch(() => {});
         dispatch(updateSettings({ hidePromo: true } as any));
+        startNewGame(); // lancer la partie après fermeture
     };
 
     const handlePromoShop = () => {
         setShowPromo(false);
         setRemindLater(false);
-        handleNavigateShop();
+        handleNavigateShop(); // va à la boutique, pas de partie lancée
     };
 
     return (
@@ -185,8 +208,21 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
                 </View>
                 <View style={styles.main}>
                     <Text style={styles.title}>shelter</Text>
-                    {user.bestScore !== null && user.bestScore > 0 && (
-                        <Text style={styles.bestScore}>meilleur score : {user.bestScore} jour{user.bestScore > 1 ? 's' : ''}</Text>
+                    {user.username && (
+                        <View style={styles.levelContainer}>
+                            <Text style={styles.usernameText}>{user.username}</Text>
+                            <Text style={styles.levelText}>
+                                Niv. {user.level ?? 1} — {user.levelProgress?.label ?? 'Rescapé'}
+                            </Text>
+                            <View style={styles.xpBarContainer}>
+                                <View style={[styles.xpBarFill, { width: `${getXpPercent(user.levelProgress)}%` }]} />
+                            </View>
+                            <Text style={styles.xpText}>
+                                {user.levelProgress?.xpForNextLevel
+                                    ? `${user.levelProgress.currentXp} / ${user.levelProgress.xpForNextLevel} XP`
+                                    : `${user.levelProgress?.currentXp ?? 0} XP — MAX`}
+                            </Text>
+                        </View>
                     )}
                     <View style={styles.buttonPanel}>
                         {currentGame &&<TouchableOpacity onPress={() => handleCurrentGame()} style={styles.button} activeOpacity={0.8}>
@@ -289,19 +325,50 @@ const styles = StyleSheet.create({
         textShadowRadius: 2,
         marginVertical: 60
     },
-    bestScore: {
-        fontSize: 19,
+    levelContainer: {
+        alignItems: 'center',
+        marginTop: -30,
+        width: '70%',
+    },
+    usernameText: {
+        fontSize: 20,
         fontFamily: 'ArialRounded',
-        color: '#ffffffc7',
+        color: '#ffe7bf',
         textTransform: 'uppercase',
-        letterSpacing: 1,
-        marginTop: -35,
+        letterSpacing: 1.5,
+    },
+    levelText: {
+        fontSize: 14,
+        fontFamily: 'ArialRounded',
+        color: '#f2c94c',
+        marginTop: 4,
+    },
+    xpBarContainer: {
+        width: '100%',
+        height: 10,
+        backgroundColor: '#242120',
+        borderRadius: 5,
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: '#554946',
+        overflow: 'hidden',
+    },
+    xpBarFill: {
+        height: '100%',
+        backgroundColor: '#f2c94c',
+        borderRadius: 4,
+    },
+    xpText: {
+        fontSize: 11,
+        fontFamily: 'ArialRounded',
+        color: '#ffe8bfaf',
+        marginTop: 4,
     },
     buttonPanel: {
         justifyContent: 'flex-start',
         alignItems: 'center',
         gap: 30,
-        paddingTop: 40
+        paddingTop: 30
     },
     button: {
         alignItems: 'center',

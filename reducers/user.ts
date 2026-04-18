@@ -46,6 +46,14 @@ export type Card = {
 };
 
 
+export type LevelProgress = {
+    level: number;
+    label: string;
+    currentXp: number;
+    xpForCurrentLevel: number;
+    xpForNextLevel: number | null;
+};
+
 export type UserState= {
     value: {
         email: string | null;
@@ -64,11 +72,14 @@ export type UserState= {
         firstGame: boolean;
         isPremium: boolean;
         referralCode: string | null;
+        xp: number;
+        level: number;
+        levelProgress: LevelProgress | null;
     }
 }
 
 const initialState: UserState = {
-    value : {email: null, username: null, token: null, refreshToken: null, stateOfGauges: null, numberDays: null, bestScore: null, currentCard: null, btnSoundOn: true, soundOn: true, volume: 50, hapticOn: true, totalGames: 0, firstGame: true, isPremium: false, referralCode: null},
+    value : {email: null, username: null, token: null, refreshToken: null, stateOfGauges: null, numberDays: null, bestScore: null, currentCard: null, btnSoundOn: true, soundOn: true, volume: 50, hapticOn: true, totalGames: 0, firstGame: true, isPremium: false, referralCode: null, xp: 0, level: 1, levelProgress: null},
 };
 
 export const userSlice = createSlice({
@@ -99,7 +110,7 @@ export const userSlice = createSlice({
         setCurrentNumberDays:(state, action: PayloadAction<number>) =>{
             state.value.numberDays = action.payload
         },
-        setUserData:(state, action: PayloadAction<{bestScore: number; soundOn: boolean; volume: number; btnSoundOn: boolean; hapticOn: boolean; totalGames: number; isPremium?: boolean; referralCode?: string | null; currentGameId?: string | null}>) =>{
+        setUserData:(state, action: PayloadAction<{bestScore: number; soundOn: boolean; volume: number; btnSoundOn: boolean; hapticOn: boolean; totalGames: number; isPremium?: boolean; referralCode?: string | null; currentGameId?: string | null; xp?: number; level?: number; levelProgress?: LevelProgress | null}>) =>{
             state.value.bestScore = action.payload.bestScore;
             state.value.soundOn = action.payload.soundOn;
             state.value.volume = action.payload.volume;
@@ -108,6 +119,9 @@ export const userSlice = createSlice({
             state.value.totalGames = action.payload.totalGames ?? 0;
             state.value.isPremium = action.payload.isPremium ?? false;
             state.value.referralCode = action.payload.referralCode ?? null;
+            state.value.xp = action.payload.xp ?? 0;
+            state.value.level = action.payload.level ?? 1;
+            state.value.levelProgress = action.payload.levelProgress ?? null;
         },
         updateBestScore: (state, action: PayloadAction<number>) =>{
             state.value.bestScore = action.payload
@@ -137,9 +151,14 @@ export const userSlice = createSlice({
         },
         setReferralCode : (state, action: PayloadAction<string>) =>{
             state.value.referralCode = action.payload
+        },
+        setLevelProgress : (state, action: PayloadAction<{xp: number; level: number; levelProgress: LevelProgress}>) =>{
+            state.value.xp = action.payload.xp;
+            state.value.level = action.payload.level;
+            state.value.levelProgress = action.payload.levelProgress;
         }
     }
 });
 
-export const { signin, setGameState, setGauges, setCurrentCard, setCurrentNumberDays, setUserData, signout, updateBestScore, updateSettings, updateTokens, setFirstGame, setPremium, setReferralCode } = userSlice.actions;
+export const { signin, setGameState, setGauges, setCurrentCard, setCurrentNumberDays, setUserData, signout, updateBestScore, updateSettings, updateTokens, setFirstGame, setPremium, setReferralCode, setLevelProgress } = userSlice.actions;
 export default userSlice.reducer;

@@ -51,6 +51,17 @@ type GameResponse = {
     description: string;
   };
   achievements: [];
+  xp?: {
+    gained: number;
+    breakdown: { days: number; achievements: number; events: number };
+    oldXp: number;
+    newXp: number;
+    oldLevel: number;
+    newLevel: number;
+    leveledUp: boolean;
+    unlockedCards: { key: string; pool: string; text: string; image: string }[];
+    progress: { level: number; label: string; currentXp: number; xpForCurrentLevel: number; xpForNextLevel: number | null };
+  };
 };
 
 
@@ -177,11 +188,11 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
     };
 
 
-    // Déclenche le gameover
-    const handleGameover = (achievements: [] ) => {
+    // Déclenche le game over
+    const handleGameover = (achievements: [], xpData?: any) => {
         setTimeout(() => {
             resetGame();
-            navigation.navigate('RecapGame', { screen: 'RecapGame', achievements: achievements  });
+            navigation.navigate('RecapGame', { screen: 'RecapGame', achievements: achievements, xp: xpData ?? null });
         }, 1000);
     }
 
@@ -352,7 +363,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                 handleChoice('left');
             }
             else{
-                handleGameover(lastResponse?.achievements || []);
+                handleGameover(lastResponse?.achievements || [], lastResponse?.xp);
             }
         }
         else{
@@ -372,7 +383,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                 handleChoice('right');
             }
             else{
-                handleGameover(lastResponse?.achievements || []);
+                handleGameover(lastResponse?.achievements || [], lastResponse?.xp);
             }
         }else{
             handleNextTutoCard('right');
