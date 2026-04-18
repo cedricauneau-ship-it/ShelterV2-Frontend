@@ -22,6 +22,11 @@ class AdManager {
   private static loaded = false;
   private static initialized = false;
   private static gamesStarted = 0;
+  private static premium = false; // si true, aucune pub ne s'affiche
+
+  static setPremium(value: boolean): void {
+    this.premium = value;
+  }
 
   private static getAdUnitId(): string {
     // TestIds est disponible seulement après le require()
@@ -71,7 +76,9 @@ class AdManager {
   }
 
   // Pub à la 3ème partie, 5ème, 7ème... (toutes les 2 parties à partir de la 3ème)
+  // Aucune pub si l'utilisateur est premium
   static shouldShow(): boolean {
+    if (this.premium) return false;
     this.gamesStarted++;
     return this.gamesStarted >= 3 && (this.gamesStarted - 1) % 2 === 0;
   }

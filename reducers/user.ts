@@ -62,11 +62,13 @@ export type UserState= {
         hapticOn: boolean;
         totalGames: number;
         firstGame: boolean;
+        isPremium: boolean;
+        referralCode: string | null;
     }
 }
 
 const initialState: UserState = {
-    value : {email: null, username: null, token: null, refreshToken: null, stateOfGauges: null, numberDays: null, bestScore: null, currentCard: null, btnSoundOn: true, soundOn: true, volume: 50, hapticOn: true, totalGames: 0, firstGame: true},
+    value : {email: null, username: null, token: null, refreshToken: null, stateOfGauges: null, numberDays: null, bestScore: null, currentCard: null, btnSoundOn: true, soundOn: true, volume: 50, hapticOn: true, totalGames: 0, firstGame: true, isPremium: false, referralCode: null},
 };
 
 export const userSlice = createSlice({
@@ -97,13 +99,15 @@ export const userSlice = createSlice({
         setCurrentNumberDays:(state, action: PayloadAction<number>) =>{
             state.value.numberDays = action.payload
         },
-        setUserData:(state, action: PayloadAction<{bestScore: number; soundOn: boolean; volume: number; btnSoundOn: boolean; hapticOn: boolean; totalGames: number; currentGameId?: string | null}>) =>{
+        setUserData:(state, action: PayloadAction<{bestScore: number; soundOn: boolean; volume: number; btnSoundOn: boolean; hapticOn: boolean; totalGames: number; isPremium?: boolean; referralCode?: string | null; currentGameId?: string | null}>) =>{
             state.value.bestScore = action.payload.bestScore;
             state.value.soundOn = action.payload.soundOn;
             state.value.volume = action.payload.volume;
             state.value.btnSoundOn = action.payload.btnSoundOn;
             state.value.hapticOn = action.payload.hapticOn ?? true;
             state.value.totalGames = action.payload.totalGames ?? 0;
+            state.value.isPremium = action.payload.isPremium ?? false;
+            state.value.referralCode = action.payload.referralCode ?? null;
         },
         updateBestScore: (state, action: PayloadAction<number>) =>{
             state.value.bestScore = action.payload
@@ -127,9 +131,15 @@ export const userSlice = createSlice({
         },
         setFirstGame : (state, action: PayloadAction<boolean>) =>{
             state.value.firstGame = action.payload
+        },
+        setPremium : (state, action: PayloadAction<boolean>) =>{
+            state.value.isPremium = action.payload
+        },
+        setReferralCode : (state, action: PayloadAction<string>) =>{
+            state.value.referralCode = action.payload
         }
     }
 });
 
-export const { signin, setGameState, setGauges, setCurrentCard, setCurrentNumberDays, setUserData, signout, updateBestScore, updateSettings, updateTokens, setFirstGame } = userSlice.actions;
+export const { signin, setGameState, setGauges, setCurrentCard, setCurrentNumberDays, setUserData, signout, updateBestScore, updateSettings, updateTokens, setFirstGame, setPremium, setReferralCode } = userSlice.actions;
 export default userSlice.reducer;

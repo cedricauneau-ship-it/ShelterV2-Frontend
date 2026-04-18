@@ -1,15 +1,17 @@
 import React from "react";
-import { StyleSheet, View, Text, Image, ImageBackground, Dimensions } from "react-native";
-import { useState, useEffect  } from 'react';
+import { StyleSheet, View, Text, Image, ActivityIndicator, Dimensions } from "react-native";
+import { useState, useEffect, useRef } from 'react';
 import { ImageSourcePropType } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withRepeat,
   interpolate,
   withSpring,
   useAnimatedReaction,
   runOnJS,
+  cancelAnimation,
   Layout,
   FadeIn,
   FadeOut,
@@ -28,38 +30,77 @@ type SwipeCardProps = {
   image: ImageSourcePropType;
   isConsequence: boolean;
   leftChoiceText: string;
-  rightChoiceText: string
+  rightChoiceText: string;
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
   handleSideChange: (side: string) => void;
   triggerReset: boolean;
+  readyToFlip?: boolean; // false = reste sur le dos (chargement), true = flip vers le front
 };
 
 
-export default function AnimatedCard({ image, isConsequence, leftChoiceText, rightChoiceText, onSwipeLeft, onSwipeRight, handleSideChange, triggerReset }: SwipeCardProps) {
+export default function AnimatedCard({ image, isConsequence, leftChoiceText, rightChoiceText, onSwipeLeft, onSwipeRight, handleSideChange, triggerReset, readyToFlip = true }: SwipeCardProps) {
 
   const [isFlipped, setIsFlipped] = useState(true);     // whether the card is on the front side or the back side
   const flipRotation = useSharedValue(180); // 0 = front, 180 = back
+  const loadingPulse = useSharedValue(1);   // pulse sur le dos pendant le chargement
 
   const translateX = useSharedValue(0);
   const swipeRotation = useSharedValue(0);
 
-  const reset = () => {
+  const waitingForData = useRef(false); // true = on a reset, on attend readyToFlip
+
+  const resetToBack = () => {
     setIsFlipped(true);
     setSwipeSide('center');
-    flipRotation.value = 180; // reset back side
+    flipRotation.value = 180;
     translateX.value = 0;
     swipeRotation.value = 0;
+  };
 
-    // flip after short delay
-    setTimeout(() => {
-      flip();
-    }, 200);
-  }
+  const reset = () => {
+    resetToBack();
+
+    if (readyToFlip) {
+      // Comportement classique (tuto, conséquence) : flip immédiat après délai
+      waitingForData.current = false;
+      setTimeout(() => {
+        flip();
+      }, 200);
+    } else {
+      // Mode chargement : on reste sur le dos, on attend readyToFlip
+      waitingForData.current = true;
+      // Lancer le pulse de chargement
+      loadingPulse.value = withRepeat(
+        withTiming(0.5, { duration: 600 }),
+        -1,
+        true
+      );
+    }
+  };
 
   useEffect(() => {
     reset();
   }, [triggerReset]);
+
+  // Quand les données arrivent (readyToFlip passe à true), on flip
+  useEffect(() => {
+    if (readyToFlip && waitingForData.current) {
+      waitingForData.current = false;
+      // Stopper le pulse
+      cancelAnimation(loadingPulse);
+      loadingPulse.value = withTiming(1, { duration: 150 });
+      // Flip vers le front
+      setTimeout(() => {
+        flip();
+      }, 100);
+    }
+  }, [readyToFlip]);
+
+  // Style de pulse pour le chargement (opacité qui pulse sur le dos)
+  const loadingPulseStyle = useAnimatedStyle(() => ({
+    opacity: loadingPulse.value,
+  }));
 
   // FLIP ANIMATION
   const flip = () => {
@@ -188,7 +229,15 @@ useAnimatedReaction(
           }
          
           <Animated.View style={[styles.card, styles.back, backAnimatedStyle]}>
-            <Image source={require('../assets/backcard_v5.png')} style={styles.backImage} />
+            <Animated.Image
+              source={require('../assets/backcard_v5.png')}
+              style={[styles.backImage, loadingPulseStyle]}
+            />
+            {!readyToFlip && (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="small" color="#ffe7bf" />
+              </View>
+            )}
           </Animated.View>
         </View>
     </GestureDetector>
@@ -244,6 +293,11 @@ const styles = StyleSheet.create({
     backImage: {
       width: '100%',
       height: '100%'
+    },
+    loadingOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     radioactiveIcon: {
         width: 150,

@@ -84,6 +84,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
     const [consequenceText, setConsequenceText] = useState<string | null>(null);
 
     const [locked, SetLocked] = useState<boolean>(false); // lock interaction during animations times
+    const [cardReady, setCardReady] = useState<boolean>(true); // false = carte en chargement (dos visible)
 
     const [lastResponse, setLastResponse] = useState<GameResponse|null>(null); //used to store data when there is a consequence to display before displaying the next card (or gameover)
         
@@ -122,6 +123,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
 
     const resetGame = () => {
         SetLocked(false);
+        setCardReady(true);
         setLastResponse(null);
         setShowConsequence(false);
         setConsequenceText(null);
@@ -184,113 +186,108 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
     }
 
   
-    // traite de choix une fois que le swipe est validé
+    // traite le choix une fois que le swipe est validé
     const handleChoice  = async (side: 'left' | 'right') : Promise<void> => {
 
         try{
-            if(!showConsequence){ // Il n'y pas de conséquence à affichier pour la carte courante
+            if(!showConsequence){ // Pas de conséquence à afficher
 
-                // On envoie le choix au back
-                const response = await fetchWithAuth(`/games/choice`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ choice: side }),
-                } );
+                SetLocked(true);
 
-                const data = await response.json();
-                if(!data.result){ // Si pas de result, on déclenche le gameover pour ne pas bloquer le joueur dans la partie
+                // Vérifie s'il y a une conséquence à afficher AVANT le fetch
+                const cons = side === 'right' ? currentCard?.right?.consequence : currentCard?.left?.consequence;
+
+                // Lance le fetch en parallèle
+                const fetchPromise = fetchWithAuth(`/games/choice`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ choice: side }),
+                }).then(r => r.json());
+
+                // Petit délai pour que le swipe sorte de l'écran, puis affiche le dos (chargement)
+                setCardReady(false);
+                await new Promise(r => setTimeout(r, 150));
+                setTriggerReset(prev => !prev);
+
+                // Attend la réponse réseau (la carte montre son dos avec le loader)
+                const data = await fetchPromise;
+
+                if(!data.result){
+                    setCardReady(true);
                     handleGameover([]);
                     return;
                 }
 
-                setLastResponse(data); // On stock la précédente réponse (qui contient la carte ou les infos du gameover, au cas où il y a une conséquence à afficher)
+                setLastResponse(data);
+                dispatch(setGauges(data.gauges));
 
-                dispatch(setGauges(data.gauges)); // Mise à jour des jauges dans le reducer
-
-                 // Si gameover ets à true, on déclenche le game over et on interrompt le processus
                 if(data.gameover || !data.card){
-                    triggerShake(); // tremblement de la carte
-
+                    setCardReady(true);
+                    triggerShake();
                     setTimeout(() => {
                         setGameover(true);
                         setConsequenceText(data.death.description);
                         setShowConsequence(true);
-                        setTriggerReset(!triggerReset);
+                        setTriggerReset(prev => !prev);
+                        SetLocked(false);
                     }, 400);
                     return;
                 }
 
-                // On vérifie s'il y a un texte de conséquence pour le choix validé
-                const cons = side === 'right' ? currentCard?.right?.consequence : currentCard?.left?.consequence;
-
-                if (cons) { // Si oui, on montre le choix
+                if (cons) {
                     setConsequenceText(cons);
                     setShowConsequence(true);
-                    setTriggerReset(!triggerReset);
-
-                    return; // on interromps le processus (la next card sera affichée au prochain swipe)
+                    // La conséquence utilise readyToFlip=true (flip immédiat)
+                    setCardReady(true);
+                    setTriggerReset(prev => !prev);
+                    SetLocked(false);
+                    return;
                 }
 
-               
-
-                dispatch(setCurrentNumberDays(data.numberDays)); // Mise à jour du nombre de jours dans le reducer
-                SetLocked(true);    // On bloque les interractions pour le joueur le temps des animations
+                // Met à jour les données PUIS déclenche le flip vers le front
+                dispatch(setCurrentNumberDays(data.numberDays));
+                dispatch(setCurrentCard(data.card));
+                setCardReady(true); // → AnimatedCard détecte le changement et flip vers le front
 
                 setTimeout(() => {
-                    dispatch(setCurrentCard(data.card)); // on affiche la carte suivante après un délais de 100ms (pour éviter qu'on vois le changement de texte)
-                }, 100);
-
-                setTriggerReset(!triggerReset); // on déclenche le retournement de la carte
-
-                 setTimeout(() => {
-                    SetLocked(false); // On débloque les interractions pour le joueur
-                }, 200);
+                    SetLocked(false);
+                }, 600); // durée du flip (500ms) + marge
             }
-            else{     // Une conséquence a été affiché, après le swipe, on reprend maintenant le cours normal de la partie
+            else{     // Une conséquence a été affichée, on reprend le cours normal
 
-                setConsequenceText(null);  // on remet le text de conséquence à null
-                
+                setConsequenceText(null);
 
-                if(lastResponse && (lastResponse.gameover || !lastResponse.card)){ // gestion du gameover
+                if(lastResponse && (lastResponse.gameover || !lastResponse.card)){
                     if(lastResponse.death){
-
-                        triggerShake(); // tremblement de la carte
-
+                        triggerShake();
                         setTimeout(() => {
                             setGameover(true);
                             setConsequenceText(lastResponse?.death?.description || "");
                             setShowConsequence(true);
-                            setTriggerReset(!triggerReset);
+                            setTriggerReset(prev => !prev);
                         }, 400);
-                        }
-                    
-                        //triggerGameover(lastResponse.death.type, lastResponse.death.title.hook, lastResponse.death.title.phrase, lastResponse.death.description, lastResponse.achievements);
+                    }
                     return;
                 }
 
-                SetLocked(true); // on bloque les interractions le temps de l'animation
+                SetLocked(true);
+
+                if(lastResponse?.card){
+                    dispatch(setCurrentCard(lastResponse.card));
+                    dispatch(setCurrentNumberDays(lastResponse.numberDays));
+                }
+
+                setShowConsequence(false);
+                setTriggerReset(prev => !prev);
 
                 setTimeout(() => {
-
-                    if(lastResponse?.card){ // on affiche la carte
-                        dispatch(setCurrentCard(lastResponse.card));
-                        dispatch(setCurrentNumberDays(lastResponse.numberDays));
-                    }
-
-
-                    setShowConsequence(false); // on desactive le flag 'consequence'
-                }, 100);
-
-                setTriggerReset(!triggerReset); // on déclenche l'animation de la carte
-
-                setTimeout(() => {
-                    SetLocked(false); // on débloque les interractions
-                }, 200);
-
+                    SetLocked(false);
+                }, 600);
             }
-            
+
         } catch (err) {
             if (__DEV__) console.error('[GameScreen] handleChoice error:', err);
+            SetLocked(false);
         }
     }
 
@@ -508,7 +505,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                             <View style={[styles.textContainer, gameover && styles.textContainerGameover]}>
 
                                 {/*GAME*/}
-                                {!gameover &&
+                                {!gameover && cardReady &&
                                     <Animated.Text
                                         key={currentCard?.key}
                                         entering={FadeIn.duration(200)}
@@ -559,6 +556,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                                         onSwipeRight={onSwipeRight}
                                         handleSideChange={(side: string) => handleSideChange(side)}
                                         triggerReset={triggerReset}
+                                        readyToFlip={cardReady}
                                         />
 
                                 </View>
