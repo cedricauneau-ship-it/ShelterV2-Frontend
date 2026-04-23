@@ -44,11 +44,9 @@ type GameResponse = {
   card?: Card;
   death?: {
     type: string;
-    title: {
-      hook: string;
-      phrase: string;
-    };
+    title: string;
     description: string;
+    cardDeathText?: string | null;
   };
   achievements: [];
   xp?: {
@@ -232,26 +230,31 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                 setLastResponse(data);
                 dispatch(setGauges(data.gauges));
 
+                // Conséquence à afficher avant de continuer (ou avant la mort).
+                // En cas de gameover, on préfère le cardDeathText (texte de mort contextualisé) à la conséquence du choix.
+                const deathNarrative = data.gameover ? data.death?.cardDeathText : null;
+                const textToShow = deathNarrative || cons;
+
+                if (textToShow) {
+                    setConsequenceText(textToShow);
+                    setShowConsequence(true);
+                    setCardReady(true);
+                    setTriggerReset(prev => !prev);
+                    SetLocked(false);
+                    return;
+                }
+
+                // Gameover SANS conséquence ni cardDeathText → afficher directement la mort
                 if(data.gameover || !data.card){
                     setCardReady(true);
                     triggerShake();
                     setTimeout(() => {
                         setGameover(true);
-                        setConsequenceText(data.death.description);
+                        setConsequenceText(data.death?.description || '');
                         setShowConsequence(true);
                         setTriggerReset(prev => !prev);
                         SetLocked(false);
                     }, 400);
-                    return;
-                }
-
-                if (cons) {
-                    setConsequenceText(cons);
-                    setShowConsequence(true);
-                    // La conséquence utilise readyToFlip=true (flip immédiat)
-                    setCardReady(true);
-                    setTriggerReset(prev => !prev);
-                    SetLocked(false);
                     return;
                 }
 

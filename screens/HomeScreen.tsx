@@ -154,6 +154,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
         navigation.navigate('Credit', { screen: 'Credit' });
     };
 
+    const handleNavigateProfile = () => {
+        AudioManager.playEffect('click');
+        navigation.navigate('Profile', { screen: 'Profile' });
+    };
+
     const handleNavigateShop = () => {
         AudioManager.playEffect('click');
         navigation.navigate('Shop', { screen: 'Shop' });
@@ -198,6 +203,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => handleLogout()} activeOpacity={0.8} style={styles.headerIcon}>
                         <FontAwesome name={'sign-out' as any} size={40} color='#ffe7bf' />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleNavigateProfile()} activeOpacity={0.8} style={styles.headerIcon}>
+                        <FontAwesome name={'user-circle' as any} size={38} color='#ffe7bf' />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleNavigateShop()} activeOpacity={0.8} style={styles.headerIcon}>
                         <FontAwesome name={'shopping-cart' as any} size={40} color='#f2c94c' />
@@ -334,7 +342,6 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontFamily: 'ArialRounded',
         color: '#ffe7bf',
-        textTransform: 'uppercase',
         letterSpacing: 1.5,
     },
     levelText: {

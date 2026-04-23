@@ -23,6 +23,7 @@ import SplashScreen from './screens/SplashScreen';
 import SuccesScreen from './screens/SuccesScreen';
 import RecapGameScreen from './screens/RecapGameScreen';
 import ShopScreen from './screens/ShopScreen';
+import ProfileScreen from './screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -111,6 +112,7 @@ export default function App() {
               <Stack.Screen name="Parametre" component={ParametreScreen} />
               <Stack.Screen name="Credit" component={CreditScreen} />
               <Stack.Screen name="Shop" component={ShopScreen} />
+              <Stack.Screen name="Profile" component={ProfileScreen} />
               <Stack.Screen name="Succes" component={SuccesScreen} />
               <Stack.Screen name="Game" component={GameScreen} />
               <Stack.Screen name="EndGame" component={EndGameScreen} />

@@ -1,13 +1,11 @@
-import { View, ActivityIndicator, Alert, Modal, Text, TextInput, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingView, ImageBackground, Image } from "react-native"
-import { useState, useCallback } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ImageBackground, Image } from "react-native"
+import { useCallback } from "react";
 import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
-
-import { DEPLOYED_BACKEND_ADDRESS } from "../modules/global";
-
 import { useDispatch } from "react-redux";
 import { signin } from "../reducers/user";
+import { useState } from "react";
 
-import Entypo from '@expo/vector-icons/Entypo';
+import { DEPLOYED_BACKEND_ADDRESS } from "../modules/global";
 import AudioManager from '../modules/audioManager';
 
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
@@ -21,48 +19,28 @@ type ConnexionScreenProps = {
     navigation: NavigationProp<ParamListBase>;
 }
 
-// Grabbed from emailregex.com
-const EMAIL_REGEX: RegExp = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-
 const BACKEND_ADDRESS = DEPLOYED_BACKEND_ADDRESS;
 
-export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
-       
-    const [username, setUsername] = useState(``);
-    const [password, setPassword] = useState(``);
-    const [usernameSignup, setUsernameSignup] = useState(``);
-    const [emailSignup, setEmailSignup] = useState('');
-    const [passwordSignup, setPasswordSignup] = useState('');
-    const [emailError, setEmailError] = useState(false);
-    const [isPWDVisible, setIsPWDvisible] = useState(false); //pour que le MDP soit caché
-    const [isSignupVisible, setIsSignupVisible] = useState(false); //état de la modal signup
-    const [isResetPWDVisible, setIsResetPWDVisible] = useState(false); //état de la modal reset pwd
-    const [emailReset, setEmailReset] = useState('');
-    const [signinError, SetSigninError] = useState('')
-    const [signupError, setSignupError] = useState('')
-    const [passwordError, setPasswordError] = useState('')
-    const [loading, setLoading] = useState(false);    
+export default function ConnexionScreen({ navigation }: ConnexionScreenProps) {
 
+    const [error, setError] = useState('');
     const dispatch = useDispatch();
 
-    // Coupe la musique sur l'écran de connexion (ni cinématique ni menu)
+    // Coupe la musique sur l'écran de connexion
     useFocusEffect(useCallback(() => {
         AudioManager.pauseBackground();
         AudioManager.pauseBackgroundGame();
     }, []));
 
-    const safePlayEffect = (type: Parameters<typeof AudioManager.playEffect>[0]) => {
-        try { AudioManager.playEffect(type); } catch {}
-    };
-
     const handleGoogleSignin = async () => {
+        setError('');
         try {
             await GoogleSignin.hasPlayServices();
             const userInfo = await GoogleSignin.signIn();
             const idToken = userInfo.data?.idToken;
 
             if (!idToken) {
-                SetSigninError('Impossible de récupérer le token Google');
+                setError('Impossible de récupérer le token Google');
                 return;
             }
 
@@ -83,543 +61,91 @@ export default function ConnexionScreen({ navigation }: ConnexionScreenProps ) {
                 }));
                 navigation.navigate('Home', { screen: 'Home' });
             } else {
-                SetSigninError(data.error ?? 'Erreur de connexion Google');
+                setError(data.error ?? 'Erreur de connexion Google');
             }
-        } catch (error: any) {
-            if (error.code === statusCodes.SIGN_IN_CANCELLED) return;
-            if (error.code === statusCodes.IN_PROGRESS) return;
-            if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                SetSigninError('Google Play Services non disponible');
+        } catch (err: any) {
+            if (err.code === statusCodes.SIGN_IN_CANCELLED) return;
+            if (err.code === statusCodes.IN_PROGRESS) return;
+            if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                setError('Google Play Services non disponible');
                 return;
             }
-            SetSigninError('Erreur de connexion Google');
-            if (__DEV__) console.error('[Google SignIn]', error);
+            setError('Erreur de connexion Google');
+            if (__DEV__) console.error('[Google SignIn]', err);
         }
-    };
-
-    const handleSignin = () => {
-            SetSigninError('');
-            if(!username || !password){
-                SetSigninError('Veuillez remplir tous les champs');
-                return;
-            }
-            
-            fetch(`${BACKEND_ADDRESS}/users/signin`, {
-                method: 'POST',
-                headers: {'Content-Type' : 'application/json'},
-                body: JSON.stringify({username : username.trim(), password})
-            })
-            .then(response => {return response.json()})
-            .then(data => {
-                if (data.result){
-                    //stokage du token et redirection
-                    dispatch(signin({token : data.token, refreshToken: data.refreshToken, username, email: data.email}))
-                    setUsername('')
-                    setPassword('')
-                    SetSigninError('')
-                    navigation.navigate('Home', { screen: 'Home' });
-                } else {
-                    //console.error('Erreur de connexion:', data.error);
-                    SetSigninError("Utilisateur introuvable")
-                }
-            })
-            .catch(error => {
-                if (__DEV__) console.error('Erreur de réseau', error)
-                SetSigninError('Erreur de connexion au serveur')
-            });
-        }
-
-        const handleSignup = () => {
-            safePlayEffect('click');
-            setEmailError(false);
-            setPasswordError('');
-            setSignupError('');
-
-            if (!EMAIL_REGEX.test(emailSignup)){
-                setEmailError(true);
-                return;
-            }
-
-            if (!usernameSignup){
-                setSignupError("Vous devez saisir un username")
-                return
-            }
-            if (!passwordSignup || passwordSignup.length < 3){
-                setPasswordError("Le mot de passe doit contenir au moins 3 caratères")
-                return
-            }
-                
-                fetch(`${BACKEND_ADDRESS}/users/signup`,{
-                    method: "POST",
-                    headers:{'Content-Type' : 'application/json',},
-                    body: JSON.stringify({email: emailSignup, username: usernameSignup, password: passwordSignup})
-                }).then(response => response.json())
-                .then(data => {
-                    if (data.result === true){
-                        dispatch(signin({token : data.token, refreshToken: data.refreshToken, username : usernameSignup, email: emailSignup}))
-                        setEmailSignup('')
-                        setUsername('')
-                        setPasswordSignup('')
-                        setEmailError(false)
-                        setSignupError('')
-                        setPasswordError('')
-                        setIsSignupVisible(false);
-                        navigation.navigate('Home', { screen: 'Home' });
-                    } else {
-                        //console.error('Erreur de connexion:', data.error)
-                        setSignupError('Email/Username déjà utilisé')
-                        setPassword('')
-                    }
-                })
-            .catch(error => {
-                if (__DEV__) console.error('Erreur réseau', error)
-                setSignupError('Erreur de connexion au serveur')
-            });
-        };
-        
-    const handleResetPassword = async () => {
-         setEmailError(false);
-
-            if (!EMAIL_REGEX.test(emailReset)){
-                setEmailError(true);
-                return;
-            }
-
-            setLoading(true);
-
-            try{
-                const response = await fetch(`${BACKEND_ADDRESS}/users/forgot-password`, {
-                    method: "POST",
-                    headers: {"Content-Type" : 'application/json',
-                    },
-                    body: JSON.stringify({email : emailReset})
-                });
-                const data = await response.json()
-                if (response.ok){
-                    Alert.alert('Email envoyé', data.message || 'Si cet email existe, un lien de réinitialisation a été envoyé. Pensez à vérifier dans les spams.',
-                        [
-            {
-              text: 'OK',
-              onPress: () => setIsResetPWDVisible(false)
-            }
-          ]
-                    )
-                } else {
-                    Alert.alert ('Erreur', data.error || 'Une erreur est survenue')
-                }
-            } catch (error) {
-                Alert.alert('Erreur', 'Impossible de contacter le serveur')
-                if (__DEV__) console.error(error);
-                
-            } finally {
-                setLoading(false);
-            }
     };
 
     return (
         <ImageBackground source={require('../assets/background.jpg')} style={styles.background}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-                <View style={styles.text}>
-                    <Text style={styles.title}>Connexion</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Peudo"
-                        placeholderTextColor={'black'}
-                        autoCapitalize="none"
-                        keyboardType='default'
-                        autoComplete="username"
-                        onChangeText={(value) => {safePlayEffect('click'); setUsername(value); SetSigninError('')}}
-                        value={username}
-                    />
+            <View style={styles.container}>
+                <Text style={styles.title}>shelter</Text>
+                <Text style={styles.subtitle}>Connecte-toi pour survivre</Text>
 
-                    <View style={styles.passwordContainer}>
-                        <TextInput 
-                            style={styles.passwordInput}
-                            placeholder="Password"
-                            placeholderTextColor={'black'}
-                            autoCapitalize="none"
-                            textContentType="password"
-                            autoCorrect = {false}
-                            keyboardType="default"
-                            secureTextEntry={!isPWDVisible}
-                            onChangeText={(value) => {safePlayEffect('click'); setPassword(value); SetSigninError('')}}
-                            value={password}
-                        />
-                        <TouchableOpacity style={styles.eyeButton} onPress={()=>setIsPWDvisible(!isPWDVisible)}>
-                            <Entypo name={isPWDVisible ? "eye-with-line" : "eye"} size={22} color={'#352c2bb0'}/>
-                        </TouchableOpacity>
-                    </View>
-                    {signinError && <Text style={styles.error}>{signinError}</Text>}
-                   
-                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <TouchableOpacity onPress={handleGoogleSignin} style={styles.googleButton} activeOpacity={0.8}>
+                    <Image source={require('../assets/icon-google.png')} style={styles.googleIcon} />
+                    <Text style={styles.googleButtonText}>Continuer avec Google</Text>
+                </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => {setIsResetPWDVisible(true); setUsername(''); setPassword('')}} style={styles.buttonReset} activeOpacity={0.8}>
-                        <Text style={styles.buttonTextResetPwd}>Mot de passe oublié ?</Text>
-                    </TouchableOpacity>
-                   </View>
-
-                    <TouchableOpacity 
-                        onPress={() => {safePlayEffect('click'); handleSignin()}} 
-                        style={styles.button} 
-                        activeOpacity={0.8}
-                    >
-                        <Text style={styles.buttonText}>Go</Text>
-                    </TouchableOpacity>
-
-                    <Modal
-                    visible = {isResetPWDVisible}
-                    animationType='slide'
-                    transparent={true}
-                    onRequestClose={()=> {setIsResetPWDVisible(false); setEmailError(false); setPasswordError(''); setSignupError('')}}
-                    >
-                        <View style={styles.modalOverlay}>
-                            <View style={styles.modalContent}>
-                                <Text style={styles.modalTitle}>Demande de réinitialisation de mot de passe</Text>
-                                <TextInput
-                                    style={styles.inputModal}
-                                    placeholder="Email"
-                                    onChangeText={(value) => {setEmailReset(value);setEmailError(false)}}
-                                    value={emailReset}
-                                    autoCapitalize="none"
-                                    keyboardType="email-address"
-                                    autoComplete="email"
-                                />
-                                {emailError && <Text style={styles.error}>Email invalide</Text>}
-                                <View style={styles.modalButtons}>
-                                    <TouchableOpacity style={styles.btn} onPress={handleResetPassword} disabled={loading}>
-                                        {loading ? (
-                                        <ActivityIndicator color="#FFE7BF" size="small" />
-                                    ) : (
-                                        <Text style={styles.buttonTextModal}>Valider</Text>
-                                    )}
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={styles.btn} onPress={()=> {setIsResetPWDVisible(false); setEmailReset(''); setEmailError(false)}}>
-                                        <Text style={styles.buttonTextModal}>Annuler</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View> 
-                            </View>                      
-                    </Modal>
-                    
-
-
-                    <View style={styles.divider}>
-                        <View style={styles.dividerLine} />
-                        <Text style={styles.dividerText}>OU</Text>
-                        <View style={styles.dividerLine} />
-                    </View>
-
-                    <TouchableOpacity onPress={handleGoogleSignin} style={styles.googleButton} activeOpacity={0.8}>
-                        <Image source={require('../assets/icon-google.png')} style={styles.googleIcon} />
-                        <Text style={styles.googleButtonText}>Continuer avec Google</Text>
-                    </TouchableOpacity>
-
-                    <Text style={styles.title2}>Pas encore de compte ?</Text>
-                    <TouchableOpacity onPress={() => {safePlayEffect('click'); setIsSignupVisible(true); setUsername(''); setPassword('')}} style={styles.button} activeOpacity={0.8}>
-                        <Text style={styles.buttonText}>Créer un compte</Text>
-                    </TouchableOpacity>
-                    <Modal
-                    visible = {isSignupVisible}
-                    animationType='slide'
-                    transparent={true}
-                    onRequestClose={()=> {setIsSignupVisible(false); setEmailError(false); setPasswordError(''); setSignupError('')}}
-                    >
-                        <View style={styles.modalOverlay}>
-                            <View style={styles.modalContent}>
-                                <Text style={styles.modalTitle}>Rejoins la survie!</Text>
-                                <TextInput
-                                    style={styles.inputModal}
-                                    placeholder="Email"
-                                    onChangeText={(value) => {setEmailSignup(value);setEmailError(false)}}
-                                    value={emailSignup}
-                                    autoCapitalize="none"
-                                    keyboardType="email-address"
-                                    autoComplete="email"
-                                />
-                                <TextInput
-                                    style={styles.inputModal}
-                                    placeholder="Pseudo"
-                                    autoCapitalize="none"
-                                    keyboardType='default'
-                                    autoComplete="username"
-                                    onChangeText={(value) => {setUsernameSignup(value); SetSigninError('')}}
-                                    value={usernameSignup}
-                                />
-                                <View style={styles.passwordContainerModal}>
-                                    <TextInput 
-                                        style={styles.passwordInputModal}
-                                        placeholder="Password"
-                                        autoCapitalize="none"
-                                        textContentType="password"
-                                        autoCorrect = {false}
-                                        keyboardType="default"
-                                        secureTextEntry={!isPWDVisible}
-                                        onChangeText={(value) => {setPasswordSignup(value); setPasswordError('')}}
-                                        value={passwordSignup}
-                                    />
-                                    <TouchableOpacity style={styles.eyeButton} onPress={()=>setIsPWDvisible(!isPWDVisible)}>
-                                        <Entypo name={isPWDVisible ? "eye-with-line" : "eye"} size={22} color={'#352c2bb0'}/>
-                                    </TouchableOpacity>
-                                </View>
-                                {emailError && <Text style={styles.error}>Email invalide</Text>}
-                                {passwordError && <Text style={styles.error}>{passwordError}</Text>}
-                                {signupError && <Text style={styles.error}>{signupError}</Text>}
-
-                                <View style={styles.modalButtons}>
-                                    <TouchableOpacity style={styles.btn} onPress={handleSignup}>
-                                        <Text style={styles.buttonTextModal}>Valider</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={styles.btn} onPress={()=> {safePlayEffect('click'); setIsSignupVisible(false); setEmailSignup(''); setUsernameSignup(''); setPasswordSignup('')}}>
-                                        <Text style={styles.buttonTextModal}>Annuler</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </View>
-                    </Modal>
-                </View>
-            </KeyboardAvoidingView>
+                {error !== '' && <Text style={styles.error}>{error}</Text>}
+            </View>
         </ImageBackground>
     )
 }
 
 const styles = StyleSheet.create({
+    background: {
+        width: '100%',
+        height: '100%',
+    },
     container: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    text: {
-        alignItems: 'center',
-    },
-
     title: {
-        fontSize: 40,
-        fontFamily: 'ArialRounded',
-        paddingBottom: 30,
-        alignItems: 'center',
-        justifyContent: 'center',
-        color:"#FFE7BF"      
-    },
-
-    title2:{
-        fontSize: 24,
+        fontSize: 70,
         fontWeight: '600',
-        fontFamily: 'ArialRounded',
-        paddingBottom: 30,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 55,
-        color:"#FFE7BF"   
-    },
-
-    button: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#352C2B',
-        width: 235,
-        height: 60,
-        borderWidth: 2.5,
-        borderColor: 'black',
-        borderRadius: 15,
-        margin: 15,
-    },
-    background:{
-        width:'100%',
-        height: '100%',
-    },
-
-    modalContent:{
-        backgroundColor: "#342C29",
-        width:'80%',
-        padding: 20,
-        borderRadius: 12,
-        elevation: 10,
-    },
-
-    modalOverlay:{
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-
-    modalTitle:{
-        fontSize: 20,
-        fontWeight: "600",
-        marginBottom: 15,
-        textAlign: "center",
-        color: "#FFE7BF",
-        fontFamily: 'ArialRounded',
-
-    },
-
-    input:{
-        width: 240,
-        height: 50,
-        backgroundColor: '#FFE7BF',
-        color: "#342C29",
-        borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 8,
-        padding: 15,
-        marginBottom: 15,
-        
-    },
-
-    inputModal:{
-        width:"100%",
-        borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 8,
-        padding: 10,
-        marginBottom: 15,
-        backgroundColor: "#FFE7BF",
-        color:'#342C29'
-        
-    },
-
-    modalButtons:{
-        flexDirection: "row",
-        justifyContent: "space-between",
-        margin: 5,
-    },
-
-    btn:{
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#342C29',
-        width: 120,
-        height: 40,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#FFE7BF",
-    },
-
-    buttonText: {
-        textTransform: 'uppercase',
-        fontSize: 20,
-        fontFamily: 'ArialRounded',
+        fontFamily: 'DaysLater',
         color: '#EFDAB7',
+        textShadowColor: '#242120',
+        textShadowOffset: { width: 3, height: 3 },
+        textShadowRadius: 2,
+        marginBottom: 20,
     },
-
+    subtitle: {
+        fontSize: 18,
+        fontFamily: 'ArialRounded',
+        color: '#ffe8bfaf',
+        marginBottom: 50,
+    },
     googleButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#fff',
-        width: 235,
+        width: 260,
         height: 60,
         borderWidth: 2.5,
         borderColor: 'black',
         borderRadius: 15,
-        gap: 10,
-        marginBottom: 15,
+        gap: 12,
     },
-
     googleIcon: {
         width: 24,
         height: 24,
     },
-
     googleButtonText: {
         fontSize: 16,
         fontFamily: 'ArialRounded',
         color: '#352C2B',
     },
-
-    divider: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        width: 235,
-        marginVertical: 15,
-        gap: 10,
-    },
-
-    dividerLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: '#EFDAB7',
-    },
-
-    dividerText: {
-        color: '#EFDAB7',
-        fontFamily: 'ArialRounded',
-        fontSize: 14,
-    },
-
-    buttonTextModal: {
-        textTransform: 'uppercase',
-        fontSize: 18,
-        fontFamily: 'ArialRounded',
-        color: '#EFDAB7',
-        
-    },
-
     error: {
-        marginTop: 10,
+        marginTop: 20,
         color: '#ff4444',
-        marginBottom: 10,
         textAlign: 'center',
         fontWeight: '500',
+        fontFamily: 'ArialRounded',
+        fontSize: 14,
+        paddingHorizontal: 30,
     },
-
-    eyeButton: {
-    },
-      
-    passwordContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        width: 240,
-        height: 50,
-        backgroundColor: '#FFE7BF',
-        borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 8,
-        paddingHorizontal: 15,
-        marginBottom: 15,
-    },
-
-     passwordInput: {
-        flex: 1,
-        height: '100%',
-        color: "#342C29",
-        fontSize: 16,
-    },
-
-    passwordContainerModal: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: "100%",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 15,
-    backgroundColor: "#FFE7BF",
-    height: 50,
-},
-
-passwordInputModal: {
-    flex: 1,
-    height: '100%',
-    color: '#342C29',
-    fontSize: 16,
-},
-buttonTextResetPwd: {
-    fontSize: 16,
-    color: '#EFDAB7',
-    fontFamily: 'ArialRounded',
-
-
-},
-buttonReset: {
-    alignItems: 'center',
-    justifyContent: "space-around",
-    width: 180,
-    height: 25,
-    borderBottomWidth : 1.5,
-    borderBottomColor: "#342C29",
-    
-},
-
 });

@@ -75,12 +75,12 @@ class AdManager {
     return this.loaded;
   }
 
-  // Pub à la 3ème partie, 5ème, 7ème... (toutes les 2 parties à partir de la 3ème)
+  // Pub à la 3ème partie, 6ème, 9ème... (toutes les 3 parties à partir de la 3ème)
   // Aucune pub si l'utilisateur est premium
   static shouldShow(): boolean {
     if (this.premium) return false;
     this.gamesStarted++;
-    return this.gamesStarted >= 3 && (this.gamesStarted - 1) % 2 === 0;
+    return this.gamesStarted >= 3 && this.gamesStarted % 3 === 0;
   }
 
   static show(onClosed: () => void): void {
