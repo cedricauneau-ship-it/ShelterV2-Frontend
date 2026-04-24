@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon-game.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splashscreen.jpg",
       "resizeMode": "contain",
@@ -25,7 +25,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.azulys.Shelter",
+      "package": "com.azulys.shelter",
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.RECORD_AUDIO",

@@ -45,7 +45,7 @@ export default function SplashscreenScreen({ navigation } : SplashscreenProps) {
 
 
  return (
-   <ImageBackground source={require('../assets/Splashscreen.jpg')} resizeMode="cover" style={styles.container}>
+   <ImageBackground source={require('../assets/splashscreen.jpg')} resizeMode="cover" style={styles.container}>
       <Pressable onPress={() => handleNavigation()} style={styles.main}>
         <Animated.Text entering={FadeIn.duration(1000)} style={[styles.title, animatedTitle]}>
         Shelter

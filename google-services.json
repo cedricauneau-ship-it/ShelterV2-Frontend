@@ -33,6 +33,35 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:542100763309:android:e31e0f11fa886836e68c24",
+        "android_client_info": {
+          "package_name": "com.azulys.shelter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "542100763309-addf4tkcshndslbikc7sehrebpj5vjkf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAimPgsiMlxqTxloYdbnFNKluyk-qKWY1U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "542100763309-addf4tkcshndslbikc7sehrebpj5vjkf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"
