@@ -91,6 +91,8 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
 
     const [showConsequence, setShowConsequence] = useState<boolean>(false);
     const [consequenceText, setConsequenceText] = useState<string | null>(null);
+    const [deathAnim, setDeathAnim] = useState<boolean>(false); // animation de mort sur la carte
+    const [deathCardText, setDeathCardText] = useState<string | null>(null); // texte à afficher dans la carte endgame
 
     const [locked, SetLocked] = useState<boolean>(false); // lock interaction during animations times
     const [cardReady, setCardReady] = useState<boolean>(true); // false = carte en chargement (dos visible)
@@ -136,6 +138,8 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
         setLastResponse(null);
         setShowConsequence(false);
         setConsequenceText(null);
+        setDeathAnim(false);
+        setDeathCardText(null);
         setCurrentSide('center');
         setGameover(false);
         setTriggerReset(prev => !prev);
@@ -230,13 +234,11 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                 setLastResponse(data);
                 dispatch(setGauges(data.gauges));
 
-                // Conséquence à afficher avant de continuer (ou avant la mort).
-                // En cas de gameover, on préfère le cardDeathText (texte de mort contextualisé) à la conséquence du choix.
-                const deathNarrative = data.gameover ? data.death?.cardDeathText : null;
-                const textToShow = deathNarrative || cons;
-
-                if (textToShow) {
-                    setConsequenceText(textToShow);
+                // Conséquence du choix à afficher avant de continuer (ou avant la mort).
+                // On montre TOUJOURS la conséquence du choix, même en cas de gameover.
+                // Au swipe suivant, si gameover → EndGameScreen.
+                if (cons) {
+                    setConsequenceText(cons);
                     setShowConsequence(true);
                     setCardReady(true);
                     setTriggerReset(prev => !prev);
@@ -244,15 +246,13 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                     return;
                 }
 
-                // Gameover SANS conséquence ni cardDeathText → afficher directement la mort
+                // Gameover SANS conséquence → animation de mort sur la carte
                 if(data.gameover || !data.card){
                     setCardReady(true);
+                    setDeathCardText(data.death?.cardDeathText || data.death?.description || '');
                     triggerShake();
                     setTimeout(() => {
-                        setGameover(true);
-                        setConsequenceText(data.death?.description || '');
-                        setShowConsequence(true);
-                        setTriggerReset(prev => !prev);
+                        setDeathAnim(true);
                         SetLocked(false);
                     }, 400);
                     return;
@@ -273,11 +273,11 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
 
                 if(lastResponse && (lastResponse.gameover || !lastResponse.card)){
                     if(lastResponse.death){
+                        setShowConsequence(false);
+                        setDeathCardText(lastResponse.death.cardDeathText || lastResponse.death.description || '');
                         triggerShake();
                         setTimeout(() => {
-                            setGameover(true);
-                            setConsequenceText(lastResponse?.death?.description || "");
-                            setShowConsequence(true);
+                            setDeathAnim(true);
                             setTriggerReset(prev => !prev);
                         }, 400);
                     }
@@ -361,7 +361,13 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
         if (hapticOn) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
         if(!tuto){
-            if(!gameover){
+            if(deathAnim){
+                // Transition de l'animation de mort → endgame
+                setDeathAnim(false);
+                setGameover(true);
+                setTriggerReset(prev => !prev);
+            }
+            else if(!gameover){
                 AudioManager.playEffect('validate');
                 handleChoice('left');
             }
@@ -381,7 +387,13 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
         if (hapticOn) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
         if(!tuto){
-            if(!gameover){
+            if(deathAnim){
+                // Transition de l'animation de mort → endgame
+                setDeathAnim(false);
+                setGameover(true);
+                setTriggerReset(prev => !prev);
+            }
+            else if(!gameover){
                 AudioManager.playEffect('validate');
                 handleChoice('right');
             }
@@ -406,7 +418,7 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
     const newPercentFood = food === 0 ? 0 : deltaFoodGauge + food * (100 - deltaFoodGauge) / 100;
 
     // gestion des rond indicateurs
-    const hideIndicators = currentSide === 'center' || showConsequence || locked || lastResponse?.gameover;
+    const hideIndicators = currentSide === 'center' || showConsequence || locked || lastResponse?.gameover || deathAnim;
 
     const hungerIndicator = hideIndicators? 0 : (currentSide === 'right' ?  Math.abs(currentCard?.right?.effect.hunger || 0) : Math.abs(currentCard?.left?.effect.hunger || 0));
     const securityIndicator = hideIndicators ? 0 : (currentSide === 'right' ?  Math.abs(currentCard?.right?.effect.security || 0) : Math.abs(currentCard?.left?.effect.security || 0));
@@ -510,22 +522,34 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                         <View style={styles.cardContainer}>
                             {!gameover && (
                             <View style={styles.gaugesContainer}>
-                                <Gauge icon={require('../assets/icon-hunger.png')} color='#f28f27' percent={hunger} indicator={hungerIndicator} decrease={food === 0}/>
-                                <Gauge icon={require('../assets/icon-security.png')} color='#378ded' percent={security} indicator={securityIndicator} decrease={false}/>
-                                <Gauge icon={require('../assets/icon-health.png')} color='#cf5a34' percent={health} indicator={healthIndicator} decrease={false}/>
-                                <Gauge icon={require('../assets/icon-moral.png')} color='#6b8a48' percent={moral} indicator={moralIndicator} decrease={false}/>
+                                <Gauge icon={require('../assets/icon-hunger.png')} color='#f28f27' percent={hunger} indicator={hungerIndicator} decrease={food === 0} deathPulse={deathAnim && lastResponse?.death?.type === 'hunger'}/>
+                                <Gauge icon={require('../assets/icon-security.png')} color='#378ded' percent={security} indicator={securityIndicator} decrease={false} deathPulse={deathAnim && lastResponse?.death?.type === 'security'}/>
+                                <Gauge icon={require('../assets/icon-health.png')} color='#cf5a34' percent={health} indicator={healthIndicator} decrease={false} deathPulse={deathAnim && lastResponse?.death?.type === 'health'}/>
+                                <Gauge icon={require('../assets/icon-moral.png')} color='#6b8a48' percent={moral} indicator={moralIndicator} decrease={false} deathPulse={deathAnim && lastResponse?.death?.type === 'moral'}/>
                             </View>
                             )}
                             <View style={[styles.textContainer, gameover && styles.textContainerGameover]}>
 
                                 {/*GAME*/}
-                                {!gameover && cardReady &&
+                                {!gameover && !deathAnim && cardReady &&
                                     <Animated.Text
                                         key={currentCard?.key}
                                         entering={FadeIn.duration(200)}
                                         style={styles.textEvent}
                                         >
                                         {currentCard?.text}
+                                    </Animated.Text>
+                                }
+
+                                {/*DEATH ANIM — titre de la cause de mort*/}
+                                {deathAnim && lastResponse?.death &&
+                                    <Animated.Text
+                                        entering={FadeIn.duration(800).delay(500)}
+                                        style={[styles.deathAnimTitle, { color: changeColor(lastResponse.death.type) || '#cc2222' }]}
+                                        numberOfLines={1}
+                                        adjustsFontSizeToFit
+                                    >
+                                        {lastResponse.death.title.toUpperCase()}
                                     </Animated.Text>
                                 }
 
@@ -571,6 +595,8 @@ export default function GameScreen({ navigation }: GameScreenProps ) {
                                         handleSideChange={(side: string) => handleSideChange(side)}
                                         triggerReset={triggerReset}
                                         readyToFlip={cardReady}
+                                        isDeath={deathAnim}
+                                        deathText={gameover ? deathCardText : null}
                                         />
 
                                 </View>
@@ -696,6 +722,12 @@ const styles = StyleSheet.create({
         fontFamily: 'ArialRounded',
         fontSize: 18,
         textAlign: 'center'
+    },
+    deathAnimTitle: {
+        fontFamily: 'ArialRounded',
+        fontSize: 26,
+        textAlign: 'center',
+        letterSpacing: 2,
     },
     gameoverSection:{
         flex: 1,

@@ -54,6 +54,8 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     const user = useSelector((state: any) => state.user.value);
     const [cardsByLevel, setCardsByLevel] = useState<Record<string, ProfileCard[]>>({});
     const [playerLevel, setPlayerLevel] = useState(1);
+    const [unlockedAchievements, setUnlockedAchievements] = useState(0);
+    const [totalAchievements, setTotalAchievements] = useState(0);
     const [loading, setLoading] = useState(true);
 
     useFocusEffect(
@@ -65,6 +67,8 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
                     if (data.result) {
                         setCardsByLevel(data.cardsByLevel ?? {});
                         setPlayerLevel(data.level ?? 1);
+                        setUnlockedAchievements(data.unlockedAchievements ?? 0);
+                        setTotalAchievements(data.totalAchievements ?? 0);
                     }
                 })
                 .catch(err => { if (__DEV__) console.error('[ProfileScreen] fetch :', err); })
@@ -108,6 +112,21 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
                                 ? `${user.levelProgress.currentXp} / ${user.levelProgress.xpForNextLevel} XP`
                                 : `${user.levelProgress?.currentXp ?? 0} XP — MAX`}
                         </Text>
+
+                        {/* Compteurs */}
+                        <View style={styles.statsRow}>
+                            <View style={styles.statItem}>
+                                <FontAwesome name={'gamepad' as any} size={18} color='#f2c94c' />
+                                <Text style={styles.statValue}>{user.totalGames ?? 0}</Text>
+                                <Text style={styles.statLabel}>Parties</Text>
+                            </View>
+                            <View style={styles.statDivider} />
+                            <View style={styles.statItem}>
+                                <FontAwesome name={'trophy' as any} size={18} color='#f2c94c' />
+                                <Text style={styles.statValue}>{unlockedAchievements} / {totalAchievements}</Text>
+                                <Text style={styles.statLabel}>Succès</Text>
+                            </View>
+                        </View>
                     </View>
                 </View>
 
@@ -264,6 +283,32 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontFamily: 'ArialRounded',
         color: '#ffe8bfaf',
+    },
+    statsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 12,
+        gap: 20,
+    },
+    statItem: {
+        alignItems: 'center',
+        gap: 4,
+    },
+    statValue: {
+        fontSize: 16,
+        fontFamily: 'ArialRounded',
+        color: '#ffe7bf',
+    },
+    statLabel: {
+        fontSize: 11,
+        fontFamily: 'ArialRounded',
+        color: '#ffe8bfaf',
+    },
+    statDivider: {
+        width: 1,
+        height: 36,
+        backgroundColor: '#554946',
     },
 
     // ─── Séparateur ──────────────────────────────────────────────────────

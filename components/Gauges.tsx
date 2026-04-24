@@ -6,6 +6,7 @@ import Animated, {
   useSharedValue,
   withTiming,
   withRepeat,
+  withSequence,
   cancelAnimation,
   interpolateColor,
 } from "react-native-reanimated";
@@ -16,9 +17,10 @@ type GaugeProps = {
   percent: number;
   indicator: number;
   decrease: boolean;
+  deathPulse?: boolean;
 };
 
-export default function Gauge({ icon, color, percent, indicator, decrease } : GaugeProps) {
+export default function Gauge({ icon, color, percent, indicator, decrease, deathPulse = false } : GaugeProps) {
 
     const delta = 5;    // to shift the fill bar to the top and avoid to hide it behind the icon
     const newPercent = percent === 0 ? 0 : delta + percent * (100 - delta) / 100;
@@ -29,6 +31,25 @@ export default function Gauge({ icon, color, percent, indicator, decrease } : Ga
     const gaugeAnim = useSharedValue(newPercent);   // hauteur jauge
     const flashAnim = useSharedValue(0);            // flash rouge one-shot
     const blinkAnim = useSharedValue(1);            // clignotement critique continu
+    const pulseScale = useSharedValue(1);           // scale pulse animation de mort
+    const pulseRed = useSharedValue(0);             // transition vers le rouge
+
+    // Animation pulse de mort
+    useEffect(() => {
+        if (deathPulse) {
+            pulseRed.value = withTiming(1, { duration: 400 });
+            pulseScale.value = withRepeat(
+                withSequence(
+                    withTiming(1.25, { duration: 400 }),
+                    withTiming(1, { duration: 400 })
+                ), -1, false
+            );
+        } else {
+            cancelAnimation(pulseScale);
+            pulseScale.value = withTiming(1, { duration: 150 });
+            pulseRed.value = withTiming(0, { duration: 150 });
+        }
+    }, [deathPulse]);
 
     // Animation flash rouge qui se déclenche quand la jauge tombe à zero
     useEffect(() => {
@@ -72,6 +93,18 @@ export default function Gauge({ icon, color, percent, indicator, decrease } : Ga
         ),
     }));
 
+    const deathPulseStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: pulseScale.value }],
+    }));
+
+    const deathBarColorStyle = useAnimatedStyle(() => ({
+        backgroundColor: interpolateColor(
+            pulseRed.value,
+            [0, 1],
+            [color, '#cc2222']
+        ),
+    }));
+
 
     // indicator
     let sizeIndicator = 0;
@@ -92,13 +125,13 @@ export default function Gauge({ icon, color, percent, indicator, decrease } : Ga
         <View style={styles.indicatorContainer}>
         {indicator > 0 && <FontAwesome name={'circle' as any} size={sizeIndicator} color='#ae9273' />}
         </View>
-        <View style={styles.gaugeGlobalContent}>                                          
+        <Animated.View style={[styles.gaugeGlobalContent, deathPulse ? deathPulseStyle : undefined]}>
             <Animated.View style={[styles.barContainer, flashStyle]}>
-                <Animated.View style={[styles.barFill, barStyle, { backgroundColor: color }]} />                
+                <Animated.View style={[styles.barFill, barStyle, { backgroundColor: color }, deathPulse ? deathBarColorStyle : undefined]} />
             </Animated.View>
             {decrease && <FontAwesome name={'caret-down' as any} style={styles.arrow} size={25} color='#ea4200ff' />}
             <Image source={icon} style={styles.icon} />
-        </View>
+        </Animated.View>
         
     </View>
   );
