@@ -16,14 +16,17 @@
       }
     },
     "preview": {
+      "channel": "preview",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "credentialsSource": "remote"
       },
       "env": {
         "EXPO_PUBLIC_BACKEND_ADDRESS": "https://shelterv2-backend-production.up.railway.app"
       }
     },
     "production": {
+      "channel": "production",
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"

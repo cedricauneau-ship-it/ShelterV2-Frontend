@@ -1,10 +1,11 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ImageBackground, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ImageBackground, ActivityIndicator, TextInput, Modal } from "react-native";
 import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useCallback, useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
 import AudioManager from '../modules/audioManager';
 import { useFetchWithAuth } from '../components/fetchWithAuth';
+import { updateUsername } from '../reducers/user';
 
 type ProfileScreenProps = {
     navigation: NavigationProp<ParamListBase>;
@@ -51,24 +52,37 @@ const LOCKED_CARD_COUNT = 3;
 
 export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     const fetchWithAuth = useFetchWithAuth();
+    const dispatch = useDispatch();
     const user = useSelector((state: any) => state.user.value);
     const [cardsByLevel, setCardsByLevel] = useState<Record<string, ProfileCard[]>>({});
     const [playerLevel, setPlayerLevel] = useState(1);
     const [unlockedAchievements, setUnlockedAchievements] = useState(0);
     const [totalAchievements, setTotalAchievements] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [rank, setRank] = useState<number | null>(null);
+    const [totalPlayers, setTotalPlayers] = useState<number | null>(null);
+    const [editModalVisible, setEditModalVisible] = useState(false);
+    const [newName, setNewName] = useState('');
+    const [editError, setEditError] = useState('');
+    const [editLoading, setEditLoading] = useState(false);
 
     useFocusEffect(
         useCallback(() => {
             setLoading(true);
-            fetchWithAuth('/users/profile-cards', { method: 'GET' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.result) {
-                        setCardsByLevel(data.cardsByLevel ?? {});
-                        setPlayerLevel(data.level ?? 1);
-                        setUnlockedAchievements(data.unlockedAchievements ?? 0);
-                        setTotalAchievements(data.totalAchievements ?? 0);
+            Promise.all([
+                fetchWithAuth('/users/profile-cards', { method: 'GET' }).then(r => r.json()),
+                fetchWithAuth('/users/rank', { method: 'GET' }).then(r => r.json()),
+            ])
+                .then(([cardsData, rankData]) => {
+                    if (cardsData.result) {
+                        setCardsByLevel(cardsData.cardsByLevel ?? {});
+                        setPlayerLevel(cardsData.level ?? 1);
+                        setUnlockedAchievements(cardsData.unlockedAchievements ?? 0);
+                        setTotalAchievements(cardsData.totalAchievements ?? 0);
+                    }
+                    if (rankData.result) {
+                        setRank(rankData.rank);
+                        setTotalPlayers(rankData.totalPlayers);
                     }
                 })
                 .catch(err => { if (__DEV__) console.error('[ProfileScreen] fetch :', err); })
@@ -79,6 +93,40 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     const handleBack = () => {
         AudioManager.playEffect('click');
         navigation.goBack();
+    };
+
+    const openEditModal = () => {
+        AudioManager.playEffect('click');
+        // Pré-remplir avec le nom actuel (sans le #tag)
+        const current = user.username ?? '';
+        const hashIndex = current.lastIndexOf('#');
+        setNewName(hashIndex > 0 ? current.slice(0, hashIndex) : current);
+        setEditError('');
+        setEditModalVisible(true);
+    };
+
+    const handleSaveUsername = async () => {
+        if (!newName.trim()) return;
+        setEditLoading(true);
+        setEditError('');
+        try {
+            const res = await fetchWithAuth('/users/username', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: newName.trim() }),
+            });
+            const data = await res.json();
+            if (data.result) {
+                dispatch(updateUsername(data.username));
+                setEditModalVisible(false);
+            } else {
+                setEditError(data.error || 'Erreur inconnue');
+            }
+        } catch {
+            setEditError('Erreur de connexion');
+        } finally {
+            setEditLoading(false);
+        }
     };
 
     // Tous les niveaux de 2 à 9
@@ -100,7 +148,12 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
                 <View style={styles.profileCard}>
                     <View style={styles.profileInner}>
                         <FontAwesome name={'user-circle' as any} size={60} color='#f2c94c' />
-                        <Text style={styles.username}>{user.username}</Text>
+                        <View style={styles.usernameRow}>
+                            <Text style={styles.username}>{user.username}</Text>
+                            <TouchableOpacity onPress={openEditModal} activeOpacity={0.7} style={styles.editButton}>
+                                <FontAwesome name={'pencil' as any} size={16} color='#f2c94c' />
+                            </TouchableOpacity>
+                        </View>
                         <Text style={styles.levelLabel}>
                             Niv. {user.level ?? 1} — {user.levelProgress?.label ?? 'Rescapé'}
                         </Text>
@@ -119,6 +172,14 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
                                 <FontAwesome name={'gamepad' as any} size={18} color='#f2c94c' />
                                 <Text style={styles.statValue}>{user.totalGames ?? 0}</Text>
                                 <Text style={styles.statLabel}>Parties</Text>
+                            </View>
+                            <View style={styles.statDivider} />
+                            <View style={styles.statItem}>
+                                <FontAwesome name={'sort-amount-asc' as any} size={18} color='#f2c94c' />
+                                <Text style={styles.statValue}>
+                                    {rank !== null && totalPlayers !== null ? `${rank} / ${totalPlayers}` : '—'}
+                                </Text>
+                                <Text style={styles.statLabel}>Classement</Text>
                             </View>
                             <View style={styles.statDivider} />
                             <View style={styles.statItem}>
@@ -203,6 +264,45 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
+
+            {/* Modal édition username */}
+            <Modal visible={editModalVisible} transparent animationType="fade" onRequestClose={() => setEditModalVisible(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Changer de nom</Text>
+                        <Text style={styles.modalTag}>
+                            Le tag {user.username?.slice(user.username.lastIndexOf('#')) ?? ''} reste inchangé
+                        </Text>
+                        <TextInput
+                            style={styles.modalInput}
+                            value={newName}
+                            onChangeText={setNewName}
+                            placeholder="Nouveau nom"
+                            placeholderTextColor="#554946"
+                            maxLength={20}
+                            autoFocus
+                        />
+                        {editError ? <Text style={styles.modalError}>{editError}</Text> : null}
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={styles.modalCancel}
+                                onPress={() => { AudioManager.playEffect('click'); setEditModalVisible(false); }}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={styles.modalCancelText}>Annuler</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalSave, editLoading && { opacity: 0.5 }]}
+                                onPress={() => { AudioManager.playEffect('click'); handleSaveUsername(); }}
+                                activeOpacity={0.8}
+                                disabled={editLoading}
+                            >
+                                <Text style={styles.modalSaveText}>{editLoading ? '...' : 'Valider'}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </ImageBackground>
     );
 }
@@ -257,7 +357,6 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontFamily: 'ArialRounded',
         color: '#ffe7bf',
-        marginTop: 8,
     },
     levelLabel: {
         fontSize: 15,
@@ -420,5 +519,103 @@ const styles = StyleSheet.create({
         fontFamily: 'ArialRounded',
         color: '#55494640',
         lineHeight: 18,
+    },
+
+    // ─── Username edit ───────────────────────────────────────────────────
+    usernameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        marginTop: 8,
+    },
+    editButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#2a2520',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#554946',
+    },
+
+    // ─── Modal ───────────────────────────────────────────────────────────
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 30,
+    },
+    modalContent: {
+        backgroundColor: '#342c29',
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: '#554946',
+        padding: 24,
+        width: '100%',
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontFamily: 'ArialRounded',
+        color: '#ffe7bf',
+        marginBottom: 6,
+    },
+    modalTag: {
+        fontSize: 13,
+        fontFamily: 'ArialRounded',
+        color: '#8B7355',
+        marginBottom: 16,
+    },
+    modalInput: {
+        width: '100%',
+        backgroundColor: '#242120',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#554946',
+        padding: 14,
+        fontSize: 18,
+        fontFamily: 'ArialRounded',
+        color: '#ffe7bf',
+        textAlign: 'center',
+    },
+    modalError: {
+        fontSize: 13,
+        fontFamily: 'ArialRounded',
+        color: '#cc2222',
+        marginTop: 8,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 20,
+        width: '100%',
+    },
+    modalCancel: {
+        flex: 1,
+        backgroundColor: '#242120',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#554946',
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    modalCancelText: {
+        fontSize: 16,
+        fontFamily: 'ArialRounded',
+        color: '#8B7355',
+    },
+    modalSave: {
+        flex: 1,
+        backgroundColor: '#f2c94c',
+        borderRadius: 12,
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    modalSaveText: {
+        fontSize: 16,
+        fontFamily: 'ArialRounded',
+        color: '#1a1715',
     },
 });

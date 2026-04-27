@@ -11,6 +11,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 
 import AudioManager from './modules/audioManager';
 import { store, persistor } from './store';  // import du store
+import ForceUpdateCheck from './components/ForceUpdateCheck';
 
 import ConnexionScreen from './screens/ConnexionScreen';
 import CreditScreen from './screens/CreditScreen';
@@ -24,6 +25,8 @@ import SuccesScreen from './screens/SuccesScreen';
 import RecapGameScreen from './screens/RecapGameScreen';
 import ShopScreen from './screens/ShopScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import FeedbackScreen from './screens/FeedbackScreen';
+import LeaderboardScreen from './screens/LeaderboardScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -102,24 +105,28 @@ export default function App() {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <GestureHandlerRootView>
-          <NavigationContainer onStateChange={hideNavBar}>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="SplashScreen" component={SplashScreen} />
-              <Stack.Screen name="Introduction" component={IntroductionScreen} />
-              <Stack.Screen name="Connexion" component={ConnexionScreen} />
-              <Stack.Screen name="Home" component={HomeScreen} />
-              <Stack.Screen name="Parametre" component={ParametreScreen} />
-              <Stack.Screen name="Credit" component={CreditScreen} />
-              <Stack.Screen name="Shop" component={ShopScreen} />
-              <Stack.Screen name="Profile" component={ProfileScreen} />
-              <Stack.Screen name="Succes" component={SuccesScreen} />
-              <Stack.Screen name="Game" component={GameScreen} />
-              <Stack.Screen name="EndGame" component={EndGameScreen} />
-              <Stack.Screen name="RecapGame" component={RecapGameScreen} />
-            </Stack.Navigator>
-          </NavigationContainer>
-        </GestureHandlerRootView>
+        <ForceUpdateCheck>
+          <GestureHandlerRootView>
+            <NavigationContainer onStateChange={hideNavBar}>
+              <Stack.Navigator screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="SplashScreen" component={SplashScreen} />
+                <Stack.Screen name="Introduction" component={IntroductionScreen} />
+                <Stack.Screen name="Connexion" component={ConnexionScreen} />
+                <Stack.Screen name="Home" component={HomeScreen} />
+                <Stack.Screen name="Parametre" component={ParametreScreen} />
+                <Stack.Screen name="Credit" component={CreditScreen} />
+                <Stack.Screen name="Shop" component={ShopScreen} />
+                <Stack.Screen name="Profile" component={ProfileScreen} />
+                <Stack.Screen name="Feedback" component={FeedbackScreen} />
+                <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+                <Stack.Screen name="Succes" component={SuccesScreen} />
+                <Stack.Screen name="Game" component={GameScreen} />
+                <Stack.Screen name="EndGame" component={EndGameScreen} />
+                <Stack.Screen name="RecapGame" component={RecapGameScreen} />
+              </Stack.Navigator>
+            </NavigationContainer>
+          </GestureHandlerRootView>
+        </ForceUpdateCheck>
       </PersistGate>
     </Provider>
   );

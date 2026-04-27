@@ -156,9 +156,12 @@ export const userSlice = createSlice({
             state.value.xp = action.payload.xp;
             state.value.level = action.payload.level;
             state.value.levelProgress = action.payload.levelProgress;
+        },
+        updateUsername : (state, action: PayloadAction<string>) =>{
+            state.value.username = action.payload;
         }
     }
 });
 
-export const { signin, setGameState, setGauges, setCurrentCard, setCurrentNumberDays, setUserData, signout, updateBestScore, updateSettings, updateTokens, setFirstGame, setPremium, setReferralCode, setLevelProgress } = userSlice.actions;
+export const { signin, setGameState, setGauges, setCurrentCard, setCurrentNumberDays, setUserData, signout, updateBestScore, updateSettings, updateTokens, setFirstGame, setPremium, setReferralCode, setLevelProgress, updateUsername } = userSlice.actions;
 export default userSlice.reducer;

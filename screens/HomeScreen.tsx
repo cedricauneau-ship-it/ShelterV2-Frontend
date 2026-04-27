@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingView, ImageBackground, Modal } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingView, ImageBackground, Modal, Image } from "react-native"
 import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
 import { useSelector, useDispatch } from "react-redux";
 import { setGameState, setUserData, signout, setFirstGame, updateSettings } from "../reducers/user";
@@ -164,6 +164,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
         navigation.navigate('Shop', { screen: 'Shop' });
     };
 
+    const handleNavigateFeedback = () => {
+        AudioManager.playEffect('click');
+        navigation.navigate('Feedback', { screen: 'Feedback' });
+    };
+
+    const handleNavigateLeaderboard = () => {
+        AudioManager.playEffect('click');
+        navigation.navigate('Leaderboard', { screen: 'Leaderboard' });
+    };
+
     const handleLogout = () => {
         AudioManager.playEffect('click');
         dispatch(signout())
@@ -202,16 +212,22 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => handleLogout()} activeOpacity={0.8} style={styles.headerIcon}>
-                        <FontAwesome name={'sign-out' as any} size={40} color='#ffe7bf' />
+                        <FontAwesome name={'sign-out' as any} size={32} color='#ffe7bf' />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleNavigateProfile()} activeOpacity={0.8} style={styles.headerIcon}>
-                        <FontAwesome name={'user-circle' as any} size={38} color='#ffe7bf' />
+                        <FontAwesome name={'user-circle' as any} size={30} color='#ffe7bf' />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleNavigateLeaderboard()} activeOpacity={0.8} style={styles.headerIcon}>
+                        <Image source={require('../assets/icon-ranking.png')} style={{ width: 28, height: 28, tintColor: '#ffe7bf' }} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleNavigateShop()} activeOpacity={0.8} style={styles.headerIcon}>
-                        <FontAwesome name={'shopping-cart' as any} size={40} color='#f2c94c' />
+                        <FontAwesome name={'shopping-cart' as any} size={32} color='#ffe7bf' />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleNavigateFeedback()} activeOpacity={0.8} style={styles.headerIcon}>
+                        <FontAwesome name={'envelope-o' as any} size={30} color='#ffe7bf' />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleNavigateParametres()} activeOpacity={0.8} style={styles.headerIcon}>
-                        <FontAwesome name={'cog' as any} size={40} color='#ffe7bf' />
+                        <FontAwesome name={'cog' as any} size={32} color='#ffe7bf' />
                     </TouchableOpacity>
                 </View>
                 <View style={styles.main}>
@@ -240,7 +256,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
                             <Text style={styles.btnText}>nouvelle partie</Text>
                         </TouchableOpacity>
                          <TouchableOpacity onPress={() => handleNavigateSucces()} style={styles.button} activeOpacity={0.8}>
-                            <Text style={styles.btnText}>succès</Text>
+                            <Text style={styles.btnText}>statistiques</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => handleNavigateCredit()} style={styles.button} activeOpacity={0.8}>
                             <Text style={styles.btnText}>crédits</Text>
@@ -312,8 +328,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     headerIcon:{
-        width: 50,
-        height: 50,
+        width: 42,
+        height: 42,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -390,6 +406,12 @@ const styles = StyleSheet.create({
     btnText: {
         textTransform: 'uppercase',
         fontSize: 23,
+        fontWeight: 'bold',
+        color: '#ffe7bf',
+    },
+    btnTextSmall: {
+        textTransform: 'uppercase',
+        fontSize: 19,
         fontWeight: 'bold',
         color: '#ffe7bf',
     },
