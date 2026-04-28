@@ -8,6 +8,7 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { useFonts } from 'expo-font';
 import * as NavigationBar from 'expo-navigation-bar';
+import * as Updates from 'expo-updates';
 
 import AudioManager from './modules/audioManager';
 import { store, persistor } from './store';  // import du store
@@ -38,6 +39,22 @@ export default function App() {
   // Cache la barre au démarrage
   useEffect(() => {
     hideNavBar();
+  }, []);
+
+  // Vérifie et applique les mises à jour OTA au lancement
+  useEffect(() => {
+    async function checkOTA() {
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          await Updates.reloadAsync();
+        }
+      } catch (e) {
+        if (__DEV__) console.log('[OTA] Check failed:', e);
+      }
+    }
+    if (!__DEV__) checkOTA();
   }, []);
 
   // Re-cache automatiquement 1.5s après que l'utilisateur l'ait révélée

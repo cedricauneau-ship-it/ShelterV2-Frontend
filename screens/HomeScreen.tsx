@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingView, ImageBackground, Modal, Image } from "react-native"
 import { NavigationProp, ParamListBase, useFocusEffect } from '@react-navigation/native';
 import { useSelector, useDispatch } from "react-redux";
-import { setGameState, setUserData, signout, setFirstGame, updateSettings } from "../reducers/user";
+import { setGameState, setUserData, setFirstGame, updateSettings } from "../reducers/user";
 import { useCallback, useEffect, useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
 import AudioManager from '../modules/audioManager';
@@ -174,11 +174,6 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
         navigation.navigate('Leaderboard', { screen: 'Leaderboard' });
     };
 
-    const handleLogout = () => {
-        AudioManager.playEffect('click');
-        dispatch(signout())
-        navigation.navigate('Connexion', { screen: 'ConnexionScreen' });
-    };
 
     const handleDismissPromo = () => {
         popupDismissedAt = user.totalGames ?? 0;
@@ -211,20 +206,17 @@ export default function HomeScreen({ navigation }: HomeScreenProps ) {
         <ImageBackground source={require('../assets/background.jpg')} resizeMode="cover" style={styles.container}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => handleLogout()} activeOpacity={0.8} style={styles.headerIcon}>
-                        <FontAwesome name={'sign-out' as any} size={32} color='#ffe7bf' />
-                    </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleNavigateProfile()} activeOpacity={0.8} style={styles.headerIcon}>
-                        <FontAwesome name={'user-circle' as any} size={30} color='#ffe7bf' />
+                        <FontAwesome name={'user-circle' as any} size={32} color='#ffe7bf' />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleNavigateLeaderboard()} activeOpacity={0.8} style={styles.headerIcon}>
-                        <Image source={require('../assets/icon-ranking.png')} style={{ width: 28, height: 28, tintColor: '#ffe7bf' }} />
+                        <Image source={require('../assets/icon-ranking.png')} style={{ width: 32, height: 32, tintColor: '#ffe7bf' }} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleNavigateShop()} activeOpacity={0.8} style={styles.headerIcon}>
                         <FontAwesome name={'shopping-cart' as any} size={32} color='#ffe7bf' />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleNavigateFeedback()} activeOpacity={0.8} style={styles.headerIcon}>
-                        <FontAwesome name={'envelope-o' as any} size={30} color='#ffe7bf' />
+                        <FontAwesome name={'envelope-o' as any} size={32} color='#ffe7bf' />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleNavigateParametres()} activeOpacity={0.8} style={styles.headerIcon}>
                         <FontAwesome name={'cog' as any} size={32} color='#ffe7bf' />

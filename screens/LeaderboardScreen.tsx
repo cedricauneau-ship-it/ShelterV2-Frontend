@@ -97,9 +97,8 @@ export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps
                     <View style={styles.playerTextContainer}>
                         <Text style={styles.playerUsername} numberOfLines={1}>{player.username}</Text>
                         <Text style={styles.playerScore}>
-                            {player.avgDays} <Text style={styles.jours}>jours/partie</Text>
+                            {player.avgDays} <Text style={styles.jours}>jours</Text>
                         </Text>
-                        <Text style={styles.gamesCount}>{player.totalGames} parties</Text>
                     </View>
                 </View>
                 {isMe && <FontAwesome name='user' size={20} color='#554946' />}
@@ -197,7 +196,7 @@ export default function LeaderboardScreen({ navigation }: LeaderboardScreenProps
                         </View>
 
                         {activeTab === 'average' && (
-                            <Text style={styles.minGamesNote}>Minimum 10 parties pour être classé</Text>
+                            <Text style={styles.minGamesNote}>Moyenne des 10 meilleurs parties</Text>
                         )}
 
                         {/* Liste */}
@@ -361,8 +360,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
     },
     playerItemMe: {
-        borderWidth: 2,
-        borderColor: '#f2c94c',
+        borderWidth: 3,
+        borderColor: '#e74c3c',
     },
     playerRank: {
         flexDirection: 'row',
@@ -416,4 +415,3 @@ const styles = StyleSheet.create({
         fontFamily: 'ArialRounded',
     },
 });
- 
