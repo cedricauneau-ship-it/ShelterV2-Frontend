@@ -39,6 +39,10 @@ export default function CreditScreen({ navigation }: CreditScreenProps ) {
                             </View>
                         </View>
 
+                        <Text style={styles.soloMessage}>
+                            Shelter est développé par une seule personne avec passion. Ton avis compte ! N'hésite pas à signaler un bug ou proposer une idée via le bouton Feedback du menu principal.
+                        </Text>
+
                         <TouchableOpacity onPress={() => Linking.openURL(`${BACKEND_ADDRESS}/privacy-policy.html`)}>
                             <Text style={styles.link}>Politique de confidentialité</Text>
                         </TouchableOpacity>
@@ -132,6 +136,14 @@ const styles = StyleSheet.create({
         fontFamily: 'ArialRounded',
         fontSize: 16,
         textAlign: 'center'
+    },
+    soloMessage: {
+        color: '#ffe8bfaf',
+        fontFamily: 'ArialRounded',
+        fontSize: 14,
+        textAlign: 'center',
+        lineHeight: 22,
+        paddingHorizontal: 10,
     },
     link: {
         color: '#8B7355',

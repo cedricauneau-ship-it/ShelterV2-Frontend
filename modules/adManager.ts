@@ -17,8 +17,7 @@ try {
 
 const PROD_AD_UNIT_ID = 'ca-app-pub-8874754604524879/4556272429';
 
-// ⚠️ PUBS DÉSACTIVÉES PENDANT LA BETA — passer à true pour la prod
-const ADS_ENABLED = false;
+const ADS_ENABLED = true;
 
 class AdManager {
   private static ad: any = null;
@@ -78,12 +77,13 @@ class AdManager {
     return this.loaded;
   }
 
-  // Pub à la 3ème partie, 6ème, 9ème... (toutes les 3 parties à partir de la 3ème)
+  // Première pub à la 3ème partie, puis toutes les 2 parties terminées
   // Aucune pub si l'utilisateur est premium
   static shouldShow(): boolean {
     if (!ADS_ENABLED || this.premium) return false;
     this.gamesStarted++;
-    return this.gamesStarted >= 3 && this.gamesStarted % 3 === 0;
+    if (this.gamesStarted < 3) return false;
+    return (this.gamesStarted - 3) % 2 === 0;
   }
 
   static show(onClosed: () => void): void {
